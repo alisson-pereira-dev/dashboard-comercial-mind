@@ -43,6 +43,7 @@ COPY --from=build --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 EXPOSE 3000
+# A porta vem da variavel PORT (o Easypanel a define, em geral 80); o healthcheck segue a mesma.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD wget -q --spider http://127.0.0.1:3000/login || exit 1
+  CMD wget -q --spider "http://127.0.0.1:${PORT:-3000}/login" || exit 1
 CMD ["node", "server.js"]
