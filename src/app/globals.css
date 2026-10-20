@@ -1,0 +1,284 @@
+@import "tailwindcss";
+
+/* Layout e escala do Boltshift (cartões de 20px, 24px de respiro, sombra suave)
+   com a paleta Mindsight: ciano #00BCD4 / #0FC8D8 e azul-marinho #1A1A2E. */
+
+:root {
+  --background: #f6f7f9;
+  --foreground: #1a1a2e;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --subtle: #9ca3af;
+  --border: #e5e7eb;
+  --track: #e9eaf0;
+
+  --brand: #00bcd4;
+  --brand-alt: #0fc8d8;
+  --brand-50: #e6f9fb;
+  --brand-ink: #00727f;
+  --brand-navy: #1a1a2e;
+
+  --status-abaixo: #ef4444;
+  --status-abaixo-bg: #fef2f2;
+  --status-abaixo-ink: #b91c1c;
+  --status-na-meta: #f59e0b;
+  --status-na-meta-bg: #fffbeb;
+  --status-na-meta-ink: #92400e;
+  --status-acima: #10b981;
+  --status-acima-bg: #ecfdf5;
+  --status-acima-ink: #047857;
+  --status-sem-meta-bg: #f3f4f6;
+  --status-sem-meta-ink: #4b5563;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-border: var(--border);
+  --color-track: var(--track);
+  --color-brand: var(--brand);
+  --color-brand-alt: var(--brand-alt);
+  --color-brand-50: var(--brand-50);
+  --color-brand-ink: var(--brand-ink);
+  --color-navy: var(--brand-navy);
+  --color-status-abaixo: var(--status-abaixo);
+  --color-status-na-meta: var(--status-na-meta);
+  --color-status-acima: var(--status-acima);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+@layer components {
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    border: 1px solid rgb(0 0 0 / 0.04);
+    box-shadow:
+      0 2px 20px rgb(0 0 0 / 0.04),
+      0 1px 3px rgb(0 0 0 / 0.03);
+  }
+
+  .card-dark {
+    position: relative;
+    background: var(--brand-navy);
+    color: #fff;
+    border-radius: 20px;
+    box-shadow:
+      0 2px 20px rgb(0 0 0 / 0.08),
+      0 1px 3px rgb(0 0 0 / 0.06);
+  }
+  .card-dark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(60% 80% at 50% 0%, rgb(15 200 216 / 0.28) 0%, rgb(26 26 46 / 0) 70%);
+    pointer-events: none;
+  }
+
+  .input {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: #fff;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: var(--foreground);
+    outline: none;
+    transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
+  }
+  .input:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgb(0 188 212 / 0.18);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: background-color 200ms ease-out, border-color 200ms ease-out, opacity 200ms ease-out;
+  }
+  .btn:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .btn-sm {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.8125rem;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--brand-alt) 0%, var(--brand) 100%);
+    color: var(--brand-navy);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--brand);
+  }
+  .btn-dark {
+    background: var(--brand-navy);
+    color: #fff;
+  }
+  .btn-dark:hover:not(:disabled) {
+    background: #2a2a45;
+  }
+  .btn-ghost {
+    background: #fff;
+    color: var(--brand-navy);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    border-color: var(--brand);
+  }
+
+  /* Barra de progresso listrada (Boltshift: gradient-bar-striped) */
+  .bar-fill {
+    background:
+      repeating-linear-gradient(135deg, rgb(255 255 255 / 0.22) 0 8px, transparent 8px 16px),
+      linear-gradient(180deg, var(--bar-a) 0%, var(--bar-b) 100%);
+    transition: width 800ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .bar-brand {
+    --bar-a: var(--brand-alt);
+    --bar-b: var(--brand);
+  }
+  .bar-abaixo {
+    --bar-a: #f87171;
+    --bar-b: var(--status-abaixo);
+  }
+  .bar-na_meta {
+    --bar-a: #fbbf24;
+    --bar-b: var(--status-na-meta);
+  }
+  .bar-acima {
+    --bar-a: #34d399;
+    --bar-b: var(--status-acima);
+  }
+  .bar-sem_meta {
+    --bar-a: #d1d5db;
+    --bar-b: #9ca3af;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-fill {
+    transition: none;
+  }
+}
+
+/* Calendário do filtro de período (react-day-picker) com as cores Mindsight.
+   A biblioteca define as próprias cores em `.rdp-root` (azul) e o CSS dela carrega depois do
+   nosso, então aqui o seletor é mais específico (`.card .rdp-root`) para o tema valer. */
+.card .rdp-root {
+  --rdp-accent-color: var(--brand-ink);
+  --rdp-accent-background-color: var(--brand-50);
+  --rdp-selected-border: 2px solid var(--brand-alt);
+  --rdp-today-color: var(--brand-ink);
+  --rdp-range_middle-background-color: var(--brand-50);
+  --rdp-range_middle-color: var(--brand-navy);
+  --rdp-range_start-color: var(--brand-navy);
+  --rdp-range_end-color: var(--brand-navy);
+  --rdp-range_start-date-background-color: var(--brand-alt);
+  --rdp-range_end-date-background-color: var(--brand-alt);
+  --rdp-day-height: 36px;
+  --rdp-day-width: 36px;
+  --rdp-day_button-height: 34px;
+  --rdp-day_button-width: 34px;
+  --rdp-months-gap: 1.5rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: var(--brand-navy);
+}
+.card .rdp-root .rdp-months {
+  flex-wrap: nowrap;
+}
+
+/* Funil: destaque suave da etapa sob o mouse (linha fina e brilho ciano). A mesma etapa dos dois funis acende junto. */
+/* A área sensível ao mouse é só o trapézio: o retângulo da etapa não responde, a camada recortada sim. */
+.funnel-stage {
+  pointer-events: none;
+}
+.funnel-stage .stage-shine {
+  pointer-events: auto;
+}
+.stage-fx {
+  transition: filter 200ms ease-out;
+}
+.stage-shine {
+  opacity: 0;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.45), rgb(255 255 255 / 0) 62%);
+  transition: opacity 200ms ease-out;
+}
+.funnel-stage:hover,
+.funnel-stage:focus-within {
+  z-index: 5;
+}
+.funnel-stage:hover .stage-fx,
+.funnel-stage:focus-within .stage-fx {
+  filter: drop-shadow(0 0 1px rgb(0 188 212 / 0.95)) drop-shadow(0 4px 12px rgb(0 188 212 / 0.45));
+}
+.funnel-stage:hover .stage-shine,
+.funnel-stage:focus-within .stage-shine {
+  opacity: 1;
+}
+.funnels:has(.funnel-stage[data-stage="leads"]:hover) .funnel-stage[data-stage="leads"] .stage-fx {
+  filter: drop-shadow(0 0 1px rgb(0 188 212 / 0.95)) drop-shadow(0 4px 12px rgb(0 188 212 / 0.45));
+}
+.funnels:has(.funnel-stage[data-stage="leads"]:hover) .funnel-stage[data-stage="leads"] .stage-shine {
+  opacity: 1;
+}
+.funnels:has(.funnel-stage[data-stage="leads_qualificados"]:hover) .funnel-stage[data-stage="leads_qualificados"] .stage-fx {
+  filter: drop-shadow(0 0 1px rgb(0 188 212 / 0.95)) drop-shadow(0 4px 12px rgb(0 188 212 / 0.45));
+}
+.funnels:has(.funnel-stage[data-stage="leads_qualificados"]:hover) .funnel-stage[data-stage="leads_qualificados"] .stage-shine {
+  opacity: 1;
+}
+.funnels:has(.funnel-stage[data-stage="consultas_agendadas"]:hover) .funnel-stage[data-stage="consultas_agendadas"] .stage-fx {
+  filter: drop-shadow(0 0 1px rgb(0 188 212 / 0.95)) drop-shadow(0 4px 12px rgb(0 188 212 / 0.45));
+}
+.funnels:has(.funnel-stage[data-stage="consultas_agendadas"]:hover) .funnel-stage[data-stage="consultas_agendadas"] .stage-shine {
+  opacity: 1;
+}
+.funnels:has(.funnel-stage[data-stage="comparecimentos"]:hover) .funnel-stage[data-stage="comparecimentos"] .stage-fx {
+  filter: drop-shadow(0 0 1px rgb(0 188 212 / 0.95)) drop-shadow(0 4px 12px rgb(0 188 212 / 0.45));
+}
+.funnels:has(.funnel-stage[data-stage="comparecimentos"]:hover) .funnel-stage[data-stage="comparecimentos"] .stage-shine {
+  opacity: 1;
+}
+.funnels:has(.funnel-stage[data-stage="vendas"]:hover) .funnel-stage[data-stage="vendas"] .stage-fx {
+  filter: drop-shadow(0 0 1px rgb(0 188 212 / 0.95)) drop-shadow(0 4px 12px rgb(0 188 212 / 0.45));
+}
+.funnels:has(.funnel-stage[data-stage="vendas"]:hover) .funnel-stage[data-stage="vendas"] .stage-shine {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage-fx,
+  .stage-shine {
+    transition: none;
+  }
+}
+/* Campos numéricos do formulário de metas sem as setinhas do navegador */
+input.no-spin {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input.no-spin::-webkit-inner-spin-button,
+input.no-spin::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
