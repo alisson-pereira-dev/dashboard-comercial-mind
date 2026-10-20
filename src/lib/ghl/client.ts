@@ -5,8 +5,9 @@ const VERSION = '2021-07-28'
 const MAX_TENTATIVAS = 5
 
 export function ghlCredentials() {
-  const token = process.env.GHL_TOKEN
-  const locationId = process.env.GHL_LOCATION_ID
+  // trim: painéis de variáveis (Docker, VPS) guardam espaços colados por engano, e o GHL recusa.
+  const token = process.env.GHL_TOKEN?.trim()
+  const locationId = process.env.GHL_LOCATION_ID?.trim()
   if (!token || !locationId) {
     throw new Error('GHL_TOKEN e GHL_LOCATION_ID precisam estar definidos no ambiente.')
   }

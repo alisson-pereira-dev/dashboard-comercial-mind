@@ -39,7 +39,14 @@ Dashboard comercial centralizado para clínicas atendidas pela Mindsight. Lê da
 
 Regra central: o frontend lê apenas do Supabase. O GHL só é chamado pelo sync (`src/app/api/sync`). Nunca buscar o GHL direto a cada carregamento de tela (rate limit e latência).
 
-Deploy: a definir.
+**Deploy**: VPS com Easypanel (ou qualquer host Docker), montado pelo `Dockerfile` da raiz (Next.js em modo `standalone`, imagem em 3 etapas, usuário não-root, porta 3000, healthcheck em `/login`). Pontos que exigem cuidado:
+
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `NEXT_PUBLIC_CLINIC_NAME` são gravadas no código **no build**: precisam existir como variáveis de ambiente/build args antes do build, e mudar o valor exige novo build. O Dockerfile as declara como `ARG`.
+- `GHL_TOKEN`, `GHL_LOCATION_ID`, `GHL_VENDEDORES_IDS` e `SUPABASE_SERVICE_ROLE_KEY` são lidas em tempo de execução e **não entram na imagem**. O `.dockerignore` deixa todo `.env*` (exceto `.env.example`) fora do contexto de build; não remover.
+- O modo standalone só liga com `NEXT_OUTPUT=standalone` (definido no Dockerfile), para `npm run build` e `npm start` locais seguirem iguais.
+- Valores de variáveis sem espaço no início ou no fim. O código faz `trim()` no token e no id da location, mas o resto não.
+- O sync leva cerca de 30 s com 1.400 contatos. O proxy reverso da VPS não pode ter timeout menor que isso (e o tempo cresce com a base).
+- Repositório privado: o Easypanel precisa da chave de deploy ou do token do GitHub para clonar.
 
 **Supabase**: projeto dedicado a este dashboard, separado do projeto dos agentes de IA (que guarda tabelas por cliente e não deve compartilhar chaves nem login com esta aplicação). A função `public.set_updated_at` já existe no projeto e deve ser reutilizada nos triggers de `updated_at`.
 

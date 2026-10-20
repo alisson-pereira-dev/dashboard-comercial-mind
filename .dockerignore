@@ -1,0 +1,16 @@
+# Nada disto entra no contexto de build (e portanto nunca na imagem).
+# Os .env ficam de fora de proposito: segredos so por variavel de ambiente no servidor.
+.env*
+!.env.example
+.git
+.gitignore
+.next
+node_modules
+npm-debug.log*
+*.tsbuildinfo
+coverage
+docs
+supabase
+Dockerfile
+.dockerignore
+.claude

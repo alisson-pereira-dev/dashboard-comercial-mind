@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // O Dockerfile liga o modo standalone (servidor enxuto para a imagem). Fora do Docker, o
+  // build e o `npm start` seguem como sempre.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

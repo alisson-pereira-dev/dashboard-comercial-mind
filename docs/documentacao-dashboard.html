@@ -1475,6 +1475,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
       <tr><td>19/10/2026</td><td>O painel de Metas virou um popup, em vez de uma página separada.</td><td>Menos trocas de página; o dashboard continua visível por trás.</td></tr>
       <tr><td>20/10/2026</td><td>As metas passaram a ter o formato do dashboard (cartões de faturamento e funil editável) e o cálculo do total do faturamento pela soma.</td><td>Evitar digitar metas que decorrem das taxas e manter o funil coerente.</td></tr>
       <tr><td>20/10/2026</td><td>A troca de tela ficou mais rápida: o login passou a ser conferido localmente em cada navegação (sem ida ao servidor de autenticação), a página de Metas busca vendedores e metas ao mesmo tempo, e as telas mostram um esqueleto de carregamento imediato.</td><td>As trocas de tela estavam lentas.</td></tr>
+      <tr><td>20/10/2026</td><td>Definida a publicação em VPS com Docker (Easypanel). Foi adicionado o Dockerfile, testado com sync completo no container.</td><td>Hospedagem da plataforma para uso pela clínica.</td></tr>
       <tr><td>20/10/2026</td><td>Nova meta de Consultas novas (quantidade), no bloco de faturamento de Metas e no cartão Consultas novas do dashboard. Os cartões de faturamento da página de Metas passaram a poder ser reordenados por arrastar e soltar.</td><td>Pedido do cliente: acompanhar a meta de consultas e organizar a tela do seu jeito.</td></tr>
       <tr><td>20/10/2026</td><td>Metas voltou a ser uma página própria (<code>/metas</code>), em vez de popup, e o funil ganhou dois modos explícitos: Automático (leads e taxas) e Manual (cada etapa).</td><td>No cálculo implícito, taxas em 100% repetiam o mesmo número em todas as etapas e ninguém entendia o motivo.</td></tr>
       <tr><td>20/10/2026</td><td>O menu lateral foi mantido (uma tentativa de removê-lo, em 19/10, foi desfeita a pedido do cliente). "Metas" no menu abre a página de metas.</td><td>Preferência do cliente pelo menu lateral.</td></tr>
@@ -1494,7 +1495,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
       <tr><td>Remoção de registros apagados no GHL</td><td>Não implementada.</td></tr>
       <tr><td>Bloco de Atividades Comerciais (fase 2)</td><td>Depende de definir o que conta como atividade (ligação, mensagem, tarefa, nota).</td></tr>
       <tr><td>Alertas automáticos e atualização agendada</td><td>Fora do MVP.</td></tr>
-      <tr><td>Publicação (hospedagem) da plataforma</td><td>A definir.</td></tr>
+      <tr><td>Publicação (hospedagem) da plataforma</td><td>VPS com Docker (Easypanel), montada pelo Dockerfile do projeto. As chaves ficam como variáveis de ambiente no servidor, nunca no código nem na imagem.</td></tr>
       <tr><td>Várias clínicas na mesma plataforma</td><td>Fase seguinte, depois de validar com a clínica piloto.</td></tr>
     </tbody>
   </table></div>

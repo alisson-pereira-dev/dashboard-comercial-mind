@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dashboard Comercial Mindsight
 
-## Getting Started
+Dashboard de acompanhamento comercial de uma clínica: lê o GoHighLevel (somente leitura), calcula funil, taxas e realizado vs. metas, com metas cadastradas na própria plataforma. Next.js 16 + Supabase.
 
-First, run the development server:
+Contexto completo, regras de negócio e decisões: [CLAUDE.md](CLAUDE.md). Documentação para a empresa: `docs/documentacao-dashboard.html`.
+
+## Rodar localmente
 
 ```bash
+cp .env.example .env.local   # preencha os valores (nunca versione este arquivo)
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Antes do primeiro uso, rode as migrations de `supabase/migrations/` no projeto Supabase, em ordem.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Verificações: `npm run typecheck`, `npm run lint`, `npm test`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Publicar em VPS (Docker / Easypanel)
 
-## Learn More
+O `Dockerfile` da raiz monta a imagem. No Easypanel, escolha **Dockerfile** como método de build (arquivo `Dockerfile`) e porta **3000**.
 
-To learn more about Next.js, take a look at the following resources:
+Variáveis de ambiente do serviço (sem espaços no início ou no fim dos valores):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Variável | Quando é usada | Observação |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | build | Gravada no código no build. Mudar exige novo build |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | build | Idem |
+| `NEXT_PUBLIC_CLINIC_NAME` | build | Idem |
+| `SUPABASE_SERVICE_ROLE_KEY` | execução | Segredo. Só no servidor |
+| `GHL_TOKEN` | execução | Segredo. Token `pit-...` da sub-conta |
+| `GHL_LOCATION_ID` | execução | Id da sub-conta (location) |
+| `GHL_VENDEDORES_IDS` | execução | Ids de usuário do GHL, separados por vírgula. O primeiro é o padrão |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+As três variáveis `NEXT_PUBLIC_*` precisam estar definidas **antes** do build (o Dockerfile as recebe como build args). O `.dockerignore` mantém qualquer `.env` fora da imagem.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Depois de publicar: abra `/login`, entre com um usuário criado no painel do Supabase e use **Atualizar dados** (o sync leva cerca de 30 s; o proxy da VPS não deve cortar requisições antes disso).
