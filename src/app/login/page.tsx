@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { ClinicaNome } from '@/components/clinica-nome'
 import { signIn } from './actions'
 
 type SearchParams = Promise<{ erro?: string }>
@@ -17,8 +18,6 @@ async function LoginWithParams({ searchParams }: { searchParams: SearchParams })
 }
 
 function LoginForm({ erro = false }: { erro?: boolean }) {
-  const clinica = process.env.NEXT_PUBLIC_CLINIC_NAME
-
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
       <form
@@ -27,7 +26,7 @@ function LoginForm({ erro = false }: { erro?: boolean }) {
       >
         <span aria-hidden className="flex size-10 items-center justify-center rounded-xl bg-navy text-base font-bold text-brand-alt">M</span>
         <h1 className="mt-4 text-2xl font-bold tracking-tight text-navy">Dashboard comercial</h1>
-        {clinica ? <p className="mt-1 text-sm text-muted">{clinica}</p> : null}
+        <ClinicaNome className="mt-1 text-sm text-muted" />
 
         <label className="mt-6 block text-sm font-medium text-navy" htmlFor="email">
           E-mail

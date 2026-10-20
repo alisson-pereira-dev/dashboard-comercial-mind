@@ -1,12 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { runtimeEnv } from '@/lib/env'
 
 // Cliente do usuário logado (respeita RLS). Para Server Components e Server Actions.
 export async function createClient() {
   const cookieStore = await cookies()
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    runtimeEnv('NEXT_PUBLIC_SUPABASE_URL')!,
+    runtimeEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')!,
     {
       cookies: {
         getAll: () => cookieStore.getAll(),

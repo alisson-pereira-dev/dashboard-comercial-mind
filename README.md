@@ -20,18 +20,18 @@ Verificações: `npm run typecheck`, `npm run lint`, `npm test`.
 
 O `Dockerfile` da raiz monta a imagem. No Easypanel, escolha **Dockerfile** como método de build (arquivo `Dockerfile`) e porta **3000**.
 
-Variáveis de ambiente do serviço (sem espaços no início ou no fim dos valores):
+Variáveis de ambiente do serviço (sem espaços no início ou no fim dos valores). **Todas são lidas em tempo de execução**: não são necessárias no build, e mudar uma delas só pede reiniciar o serviço.
 
-| Variável | Quando é usada | Observação |
-| --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | build | Gravada no código no build. Mudar exige novo build |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | build | Idem |
-| `NEXT_PUBLIC_CLINIC_NAME` | build | Idem |
-| `SUPABASE_SERVICE_ROLE_KEY` | execução | Segredo. Só no servidor |
-| `GHL_TOKEN` | execução | Segredo. Token `pit-...` da sub-conta |
-| `GHL_LOCATION_ID` | execução | Id da sub-conta (location) |
-| `GHL_VENDEDORES_IDS` | execução | Ids de usuário do GHL, separados por vírgula. O primeiro é o padrão |
+| Variável | Observação |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL do projeto Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave anônima (pública por natureza) |
+| `NEXT_PUBLIC_CLINIC_NAME` | Nome exibido no topo (opcional) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Segredo. Só no servidor |
+| `GHL_TOKEN` | Segredo. Token `pit-...` da sub-conta |
+| `GHL_LOCATION_ID` | Id da sub-conta (location) |
+| `GHL_VENDEDORES_IDS` | Ids de usuário do GHL, separados por vírgula. O primeiro é o padrão |
 
-As três variáveis `NEXT_PUBLIC_*` precisam estar definidas **antes** do build (o Dockerfile as recebe como build args). O `.dockerignore` mantém qualquer `.env` fora da imagem.
+O `.dockerignore` mantém qualquer `.env` fora da imagem.
 
 Depois de publicar: abra `/login`, entre com um usuário criado no painel do Supabase e use **Atualizar dados** (o sync leva cerca de 30 s; o proxy da VPS não deve cortar requisições antes disso).

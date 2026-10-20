@@ -1,9 +1,9 @@
 # Imagem de producao do dashboard (Next.js standalone). Build em tres etapas para a imagem final
 # levar so o necessario para rodar.
 #
-# Variaveis NEXT_PUBLIC_* sao gravadas no codigo NA HORA DO BUILD, entao precisam existir como
-# build args (no Easypanel: aba Ambiente). Os segredos (GHL_TOKEN, SUPABASE_SERVICE_ROLE_KEY,
-# GHL_LOCATION_ID, GHL_VENDEDORES_IDS) NAO entram na imagem: sao lidos em tempo de execucao.
+# Nenhuma variavel de ambiente e necessaria no BUILD: todas (Supabase, GHL, nome da clinica) sao
+# lidas em tempo de execucao. Defina-as no servico (Easypanel: aba Ambiente) e reinicie para
+# aplicar mudancas. Nenhum segredo entra na imagem.
 
 ARG NODE_VERSION=24
 
@@ -21,15 +21,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Publicas por natureza (vao para o navegador). Nao colocar segredos aqui.
-ARG NEXT_PUBLIC_SUPABASE_URL
-ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
-ARG NEXT_PUBLIC_CLINIC_NAME
-ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY \
-    NEXT_PUBLIC_CLINIC_NAME=$NEXT_PUBLIC_CLINIC_NAME \
-    NEXT_OUTPUT=standalone \
+ENV NEXT_OUTPUT=standalone \
     NEXT_TELEMETRY_DISABLED=1
+# O Git nao guarda pastas vazias: sem isso, o COPY da pasta public falha em um clone limpo.
+RUN mkdir -p public
 RUN npm run build
 
 # 3. Execucao

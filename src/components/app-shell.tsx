@@ -1,9 +1,9 @@
 import { LogOut } from 'lucide-react'
 import { signOut } from '@/app/login/actions'
+import { ClinicaNome } from './clinica-nome'
 import { NavLinks } from './nav-links'
 
 function Brand() {
-  const clinica = process.env.NEXT_PUBLIC_CLINIC_NAME
   return (
     <div className="flex items-center gap-3">
       <span
@@ -14,7 +14,7 @@ function Brand() {
       </span>
       <div className="min-w-0 leading-tight">
         <p className="text-sm font-semibold text-navy">Mindsight</p>
-        {clinica ? <p className="truncate text-xs text-muted">{clinica}</p> : null}
+        <ClinicaNome className="truncate text-xs text-muted" />
       </div>
     </div>
   )

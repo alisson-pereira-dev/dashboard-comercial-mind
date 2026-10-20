@@ -41,8 +41,9 @@ Regra central: o frontend lê apenas do Supabase. O GHL só é chamado pelo sync
 
 **Deploy**: VPS com Easypanel (ou qualquer host Docker), montado pelo `Dockerfile` da raiz (Next.js em modo `standalone`, imagem em 3 etapas, usuário não-root, porta 3000, healthcheck em `/login`). Pontos que exigem cuidado:
 
-- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `NEXT_PUBLIC_CLINIC_NAME` são gravadas no código **no build**: precisam existir como variáveis de ambiente/build args antes do build, e mudar o valor exige novo build. O Dockerfile as declara como `ARG`.
-- `GHL_TOKEN`, `GHL_LOCATION_ID`, `GHL_VENDEDORES_IDS` e `SUPABASE_SERVICE_ROLE_KEY` são lidas em tempo de execução e **não entram na imagem**. O `.dockerignore` deixa todo `.env*` (exceto `.env.example`) fora do contexto de build; não remover.
+- Nenhuma variável é necessária no build: todas (Supabase, GHL e nome da clínica) são lidas em tempo de execução, então o Easypanel não precisa passar build args e mudar uma variável só pede reiniciar o serviço. Isso vale porque o app só usa `NEXT_PUBLIC_*` no servidor, via `runtimeEnv()` em `src/lib/env.ts`. **Nunca ler essas variáveis como `process.env.NEXT_PUBLIC_X` direto**: o Next troca o valor por texto fixo no build (e, sem build arg, fica vazio). O nome da clínica é lido a cada pedido por `components/clinica-nome.tsx` (`await connection()`), para não ficar congelado na página pré-renderizada. Se um dia houver código que rode no navegador e precise de variável, ela volta a ser de build.
+- Segredos (`GHL_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, etc.) não entram na imagem. O `.dockerignore` deixa todo `.env*` (exceto `.env.example`) fora do contexto de build; não remover.
+- O Git não guarda pastas vazias: o Dockerfile cria `public` antes do build, senão o `COPY` falha em clone limpo. Teste mudanças no Dockerfile a partir de um `git clone`, não da pasta de trabalho.
 - O modo standalone só liga com `NEXT_OUTPUT=standalone` (definido no Dockerfile), para `npm run build` e `npm start` locais seguirem iguais.
 - Valores de variáveis sem espaço no início ou no fim. O código faz `trim()` no token e no id da location, mas o resto não.
 - O sync leva cerca de 30 s com 1.400 contatos. O proxy reverso da VPS não pode ter timeout menor que isso (e o tempo cresce com a base).
@@ -66,7 +67,7 @@ src/
   lib/
     ghl/                cliente da API e mapeadores GHL -> modelo próprio
     metrics/            funções puras de taxas e agregações (sem I/O)
-    supabase/           clientes (server e browser) e queries
+    supabase/           clientes (server e admin) e queries
   components/           componentes de UI reutilizáveis
 supabase/migrations/    SQL versionado, uma migration por mudança
 docs/                   notas de modelagem e decisões
@@ -94,7 +95,7 @@ docs/                   notas de modelagem e decisões
   - `GHL_VENDEDORES_IDS` (ids de usuário do GHL, separados por vírgula; o primeiro é o vendedor padrão)
 - Nunca hardcodar token, nunca usar prefixo `NEXT_PUBLIC_` nele, nunca logar o valor.
 - `.env.local` no `.gitignore`. `.env.example` lista os nomes sem valores.
-- Variáveis do Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (cliente) e `SUPABASE_SERVICE_ROLE_KEY` (somente servidor, usada pelo sync para gravar).
+- Variáveis do Supabase: `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` (o app só as lê no servidor, em tempo de execução) e `SUPABASE_SERVICE_ROLE_KEY` (somente servidor, usada pelo sync para gravar).
 - Rate limit: paginar sempre, respeitar `429` com backoff exponencial, e limitar requisições concorrentes. O botão de atualizar deve bloquear cliques repetidos enquanto um sync roda.
 
 ## 5. Mapa de endpoints do GHL
