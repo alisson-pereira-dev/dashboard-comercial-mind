@@ -8,16 +8,16 @@ export const METRIC_HELP: Record<MetricKey, string> = {
   consultas_agendadas:
     'Agendamentos do calendário criados no período. Os cancelados não entram.',
   comparecimentos:
-    'Agendamentos marcados como "compareceu" no calendário, com data da consulta dentro do período.',
+    'Agendamentos marcados como "compareceu" no calendário, criados dentro do período (data "criado em" do GHL).',
   vendas:
-    'Oportunidades ganhas no período, pela data em que foram ganhas. Não entram pacientes do pipeline Clientes da base.',
+    'Oportunidades ganhas que foram criadas dentro do período (data "criado em" do GHL). Não entram pacientes do pipeline Clientes da base.',
   consultas_novas:
     'Quantidade de vendas do período de contatos sem data de início de tratamento no GHL.',
   faturamento_consultas:
     'Soma do valor das vendas do período que são consulta, ou seja, de contatos sem data de início de tratamento.',
   faturamento_tratamentos:
     'Soma do valor das vendas do período que são tratamento, ou seja, de contatos com data de início de tratamento preenchida.',
-  faturamento_total: 'Soma do valor de todas as vendas ganhas no período.',
+  faturamento_total: 'Soma do valor de todas as vendas ganhas criadas no período.',
 }
 
 export const EXTRA_HELP = {

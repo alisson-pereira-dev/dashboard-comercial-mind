@@ -124,8 +124,8 @@ export async function getDashboardData(
             .from('agendamentos')
             .select('id', head)
             .eq('status', 'compareceu')
-            .gte('data_inicio', fromIso)
-            .lt('data_inicio', toIso),
+            .gte('criado_em', fromIso)
+            .lt('criado_em', toIso),
         ),
       ),
       por(
@@ -134,8 +134,8 @@ export async function getDashboardData(
           .select('valor, tipo, responsavel_padrao')
           .eq('status', 'ganha')
           .not('pipeline_nome', 'in', foraDoFunil())
-          .gte('fechado_em', fromIso)
-          .lt('fechado_em', toIso)
+          .gte('criado_em', fromIso)
+          .lt('criado_em', toIso)
           .limit(5000),
       ),
       supabase

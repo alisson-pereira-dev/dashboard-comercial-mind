@@ -130,8 +130,9 @@ Fluxo do sync: buscar no GHL, mapear, gravar por upsert no Supabase (chave = id 
 - Leads: contatos com `criado_em` no período.
 - Leads qualificados: oportunidades com `mql` e `criado_em` no período, fora dos pipelines de `PIPELINES_FORA_DO_FUNIL`.
 - Consultas agendadas: agendamentos não cancelados com `criado_em` no período.
-- Comparecimentos: agendamentos com status `compareceu` e `data_inicio` no período.
-- Vendas e faturamento: oportunidades `ganha` com `fechado_em` no período, fora dos pipelines excluídos. `valor` é o `monetaryValue`.
+- Comparecimentos: agendamentos com status `compareceu` e `criado_em` no período.
+- Vendas e faturamento: oportunidades `ganha` com `criado_em` no período, fora dos pipelines excluídos. `valor` é o `monetaryValue`.
+- Regra do período (decisão de 21/10/2026): **todos** os números do funil usam a data "Criado em" do próprio registro no GHL (contato, oportunidade e agendamento). Consequência: uma venda ganha hoje de uma oportunidade criada em agosto conta em agosto, e o mês atual tende a subestimar vendas e faturamento. `fechado_em` e `data_inicio` continuam gravados, mas não entram nas contagens.
 - Período: fuso fixo de Brasília (-03:00). Mês atual por padrão, ou intervalo `de` e `ate`. Atalhos: mês atual, mês anterior, últimos 7 e últimos 30 dias.
 - Cada bloco tem o próprio filtro de período, com parâmetros próprios na URL: `meta_mes`, `meta_de`, `meta_ate` (Realizado vs. metas) e `vendas_mes`, `vendas_de`, `vendas_ate` (funil, meta de faturamento, taxas e números de vendas; o seletor fica no cartão Meta de faturamento). Componente: `src/components/period-filter.tsx`.
 - Meta de um período = soma das metas dos meses que o período toca, cada uma multiplicada pela fração de dias do mês dentro do período (`metaPesos` em `src/lib/metrics/period.ts`). Mês inteiro pesa 1. Exemplo: últimos 30 dias, atravessando dois meses, usa parte da meta de cada mês. Decisão de 16/10/2026, para que atalhos que não fecham um mês também tenham meta. Mês sem meta cadastrada não entra na soma.
@@ -165,7 +166,7 @@ Se o denominador for zero, a taxa é "sem dados" (não 0%). Exibir "-" no lugar 
 - Registro sem responsável no GHL conta para o vendedor padrão, que é o primeiro id de `GHL_VENDEDORES_IDS` (Gabriela). Motivo: o agente de IA só repassava a venda para ela e não será mais usado, e hoje 30 das 31 vendas ganhas não têm responsável. A atribuição é só no dashboard (`responsavel_padrao = true`); nada é escrito no GHL. Quando o cliente passar a atribuir responsáveis no GHL, o valor do GHL prevalece.
 - Metas por vendedor: `metas.usuario_id`, com `'clinica'` para a meta geral. Vendedor selecionado usa só as metas dele; "Clínica toda" usa as gerais.
 - Pipelines do funil de vendas: `Qualificação` e `Qualificação ( IA )`. `Clientes da base` são pacientes já em tratamento e não entram como lead novo.
-- Faturamento: `payments/transactions` retorna vazio nesta location. Usar `monetaryValue` das oportunidades ganhas, com data em `lastStatusChangeAt`.
+- Faturamento: `payments/transactions` retorna vazio nesta location. Usar `monetaryValue` das oportunidades ganhas, datadas pelo `criado_em` (regra de 21/10/2026; antes era `lastStatusChangeAt`).
 
 **Lacunas de dados no GHL (bloqueiam números do Bloco 1)**
 
