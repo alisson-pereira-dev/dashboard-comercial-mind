@@ -22,6 +22,9 @@ const SIDE = 150
 const SIDE_L = 150
 export const FUNNEL_PAD = 'lg:pl-[150px] lg:pr-[150px]'
 const ARROW_H = 80
+// Os balões da direita sobem este tanto em relação ao centro da divisória entre as etapas, para o
+// meio de cada balão coincidir com o meio da curva da sua seta (que fica acima da divisória).
+export const RATE_CHIP_RISE = 9
 
 const REAL_BG = ['#0B7F98', '#27C2DA', '#6ED9EB', '#9BE5F1', '#BFEFF7']
 export const GOAL_BG = '#BDEBFA'
@@ -281,7 +284,7 @@ function Funnel({
               className="absolute w-[104px]"
               style={{
                 left: edge(i + 1, '60px'),
-                top: i * PITCH + STAGE_H + GAP / 2 - 22,
+                top: i * PITCH + STAGE_H + GAP / 2 - 22 - RATE_CHIP_RISE,
               }}
             >
               <RateChip value={rateValues[i]} name={name} title={RATE_TITLES[i]} />

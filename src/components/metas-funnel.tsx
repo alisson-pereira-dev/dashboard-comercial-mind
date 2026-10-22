@@ -3,7 +3,7 @@
 import { Calculator, Pencil } from 'lucide-react'
 import { METRIC_LABELS, type MetricKey } from '@/lib/metrics'
 import { ETAPAS_FUNIL, TAXAS, agendamentoSobreLeads, type Modo, type TaxaKey, type Taxas, type Valores } from '@/lib/metas-edit'
-import { Arrow, ArrowSpan, FUNNEL_PAD, GAP, GOAL_BG, LEFT_CHIP, LEFT_RATE, PITCH, STAGE_H, Shape, edge } from './goal-funnels'
+import { Arrow, ArrowSpan, FUNNEL_PAD, GAP, GOAL_BG, LEFT_CHIP, LEFT_RATE, PITCH, RATE_CHIP_RISE, STAGE_H, Shape, edge } from './goal-funnels'
 
 // Destaque nos campos que acabaram de ser calculados automaticamente.
 export const DESTAQUE = 'border-brand bg-brand-50 ring-2 ring-brand/40'
@@ -182,7 +182,7 @@ export function MetasFunnel({
           <Arrow i={i} />
           <div
             className="absolute w-[108px]"
-            style={{ left: edge(i + 1, '60px'), top: i * PITCH + STAGE_H + GAP / 2 - 24 }}
+            style={{ left: edge(i + 1, '60px'), top: i * PITCH + STAGE_H + GAP / 2 - 23 - RATE_CHIP_RISE }}
           >
             <TaxaEditor
               indice={i}
