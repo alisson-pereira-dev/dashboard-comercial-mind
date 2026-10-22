@@ -1,7 +1,18 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition } from 'react'
-import { BarChart3, CalendarDays, CalendarPlus, ChevronLeft, ChevronRight, FileText, Info, Pencil, RotateCcw } from 'lucide-react'
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from 'react'
+import {
+  BarChart3,
+  CalendarDays,
+  CalendarPlus,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Info,
+  Pencil,
+  RotateCcw,
+} from 'lucide-react'
 import { METRIC_KEYS, type MetricKey } from '@/lib/metrics'
 import { monthLabel } from '@/lib/format'
 import { loadMetas, saveMetas, type MetasValores } from '@/lib/metas-actions'
@@ -45,12 +56,92 @@ const FATURAMENTO: {
 
 const iguais = (a: MetasValores, b: MetasValores) => METRIC_KEYS.every((k) => a[k] === b[k])
 
+const CHAVE_EXPLICACAO = 'metas:explicacao:recolhida'
+const EVENTO_EXPLICACAO = 'metas:explicacao'
+
+// Se a caixa "Como funciona" está recolhida. O valor salvo neste navegador é lido como um
+// "armazenamento externo": no servidor vale o padrão (aberta) e no navegador o salvo, sem
+// divergência na hidratação. Vale para os dois modos, é uma preferência só da pessoa.
+function useExplicacaoRecolhida() {
+  const salvo = useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener('storage', onChange)
+      window.addEventListener(EVENTO_EXPLICACAO, onChange)
+      return () => {
+        window.removeEventListener('storage', onChange)
+        window.removeEventListener(EVENTO_EXPLICACAO, onChange)
+      }
+    },
+    () => {
+      try {
+        return window.localStorage.getItem(CHAVE_EXPLICACAO) ?? ''
+      } catch {
+        return ''
+      }
+    },
+    () => '',
+  )
+  // Se o navegador não deixar gravar (janela privada), vale só até recarregar.
+  const [memoria, setMemoria] = useState<boolean | null>(null)
+  const recolhida = memoria ?? salvo === '1'
+
+  function alternar() {
+    const novo = !recolhida
+    try {
+      if (novo) window.localStorage.setItem(CHAVE_EXPLICACAO, '1')
+      else window.localStorage.removeItem(CHAVE_EXPLICACAO)
+      setMemoria(null)
+      window.dispatchEvent(new Event(EVENTO_EXPLICACAO))
+    } catch {
+      setMemoria(novo)
+    }
+  }
+  return [recolhida, alternar] as const
+}
+
+// Caixa de explicação que o usuário pode recolher. Recolhida, sobra só o título.
+function CaixaExplicacao({
+  titulo,
+  className,
+  children,
+}: {
+  titulo: string
+  className: string
+  children: React.ReactNode
+}) {
+  const [recolhida, alternar] = useExplicacaoRecolhida()
+  return (
+    <div className={`rounded-2xl border text-navy ${className}`}>
+      <button
+        type="button"
+        onClick={alternar}
+        aria-expanded={!recolhida}
+        aria-controls="metas-explicacao"
+        className="flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold"
+      >
+        {titulo}
+        <span className="flex items-center gap-1.5 text-xs font-medium text-muted">
+          {recolhida ? 'Mostrar' : 'Recolher'}
+          <ChevronDown
+            aria-hidden
+            className={`size-4 transition-transform duration-200 ${recolhida ? '' : 'rotate-180'}`}
+          />
+        </span>
+      </button>
+      {recolhida ? null : (
+        <div id="metas-explicacao" className="px-4 pb-4 text-[13px]">
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ExplicacaoModo({ modo }: { modo: Modo }) {
   if (modo === 'automatico') {
     return (
-      <div className="rounded-2xl border border-brand/30 bg-brand-50 p-4 text-sm text-navy">
-        <p className="font-semibold">Como funciona o modo automático</p>
-        <ol className="mt-2 list-decimal space-y-1 pl-5 text-[13px]">
+      <CaixaExplicacao titulo="Como funciona o modo automático" className="border-brand/30 bg-brand-50">
+        <ol className="list-decimal space-y-1 pl-5">
           <li>
             Digite a meta de <b>Leads</b> (o único campo de etapa que você preenche).
           </li>
@@ -67,23 +158,22 @@ function ExplicacaoModo({ modo }: { modo: Modo }) {
             </ul>
           </li>
         </ol>
-        <p className="mt-2 text-[13px]">
+        <p className="mt-2">
           <b>Exemplo:</b> 1.000 leads com 40% de qualificação dão 400 leads qualificados; com 20% de agendamento, 80
           consultas agendadas. O balão à esquerda do funil mostra a taxa das consultas sobre os leads totais (aqui, 8%),
           só para leitura. Os resultados são arredondados para número inteiro.
         </p>
-      </div>
+      </CaixaExplicacao>
     )
   }
   return (
-    <div className="rounded-2xl border border-border bg-black/[0.02] p-4 text-[13px] text-navy">
-      <p className="font-semibold">Como funciona o modo manual</p>
-      <p className="mt-1">
+    <CaixaExplicacao titulo="Como funciona o modo manual" className="border-border bg-black/[0.02]">
+      <p>
         Você digita a meta de cada etapa e nada é recalculado. As taxas entre as etapas só mostram a proporção (cada etapa
         dividida pela base dela) e não podem ser editadas. Para o sistema calcular as etapas a partir de leads e taxas, troque
         para o modo <b>Automático</b>.
       </p>
-    </div>
+    </CaixaExplicacao>
   )
 }
 
