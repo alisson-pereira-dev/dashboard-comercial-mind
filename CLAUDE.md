@@ -142,7 +142,7 @@ Fluxo do sync: buscar no GHL, mapear, gravar por upsert no Supabase (chave = id 
 
 - Taxa de qualificação = leads qualificados / leads
 - Taxa de agendamento = consultas agendadas / leads qualificados (decisão de 22/10/2026; antes era sobre os leads)
-- Taxa de agendamento sobre os leads = consultas agendadas / leads (`Rates.agendamentoLead`). Só aparece no funil (balão à esquerda, entre Leads qualificados e Consultas agendadas) e na página de Metas, somente leitura; não tem cartão e não calcula etapas
+- Taxa de agendamento sobre os leads = consultas agendadas / leads (`Rates.agendamentoLead`). Só aparece no funil (balão à esquerda com uma seta curva de Leads até Consultas agendadas, `ArrowSpan` em `goal-funnels.tsx`) e na página de Metas, somente leitura; não tem cartão e não calcula etapas
 - Taxa de comparecimento = comparecimentos / consultas agendadas
 - Taxa de conversão na consulta = vendas / comparecimentos
 

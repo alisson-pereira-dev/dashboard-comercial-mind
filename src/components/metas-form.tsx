@@ -356,7 +356,7 @@ export function MetasForm({
           </div>
 
           {/* Largura limitada: o funil usa porcentagem do espaço e esticaria em telas largas */}
-          <div className="mx-auto mt-6 max-w-[600px]">
+          <div className="mx-auto mt-6 max-w-[680px]">
             <MetasFunnel
               modo={modo}
               valores={valores}

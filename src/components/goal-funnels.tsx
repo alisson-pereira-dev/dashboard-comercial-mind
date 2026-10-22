@@ -19,8 +19,8 @@ export const PITCH = STAGE_H + GAP
 // Espaços laterais do funil (telas grandes): à direita, setas e balões das taxas entre etapas;
 // à esquerda, o balão da taxa lead -> consulta agendada.
 const SIDE = 150
-const SIDE_L = 110
-export const FUNNEL_PAD = 'lg:pl-[110px] lg:pr-[150px]'
+const SIDE_L = 150
+export const FUNNEL_PAD = 'lg:pl-[150px] lg:pr-[150px]'
 const ARROW_H = 80
 
 const REAL_BG = ['#0B7F98', '#27C2DA', '#6ED9EB', '#9BE5F1', '#BFEFF7']
@@ -115,6 +115,15 @@ function RateChip({ value, name, title }: { value: number | null; name: string; 
   )
 }
 
+// Altura da seta da esquerda, que liga Leads (etapa 0) a Consultas agendadas (etapa 2).
+const SPAN_H = 2 * PITCH - 12
+// Posição do balão da esquerda: no meio da seta, a sua esquerda. Medidas relativas à borda
+// esquerda da etapa 2 (onde a seta termina).
+export const LEFT_CHIP = {
+  left: (extra = '0px') => leftEdge(LEFT_RATE.i + 1, `calc(-161px + ${extra})`),
+  top: STAGE_H * 0.5 + SPAN_H / 2 - 22,
+}
+
 // Seta curva que liga uma etapa à seguinte (telas grandes).
 export function Arrow({ i }: { i: number }) {
   return (
@@ -135,6 +144,36 @@ export function Arrow({ i }: { i: number }) {
       />
       <path
         d={`M 22 ${ARROW_H - 17} L 13 ${ARROW_H - 8} L 25 ${ARROW_H - 4}`}
+        stroke="#0B6E8A"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+// Seta curva da esquerda: sai de Leads e chega em Consultas agendadas (lead -> consulta direto).
+// É o espelho das setas da direita, só que mais comprida.
+export function ArrowSpan() {
+  return (
+    <svg
+      aria-hidden
+      className="absolute hidden lg:block"
+      width="56"
+      height={SPAN_H}
+      viewBox={`0 0 56 ${SPAN_H}`}
+      fill="none"
+      style={{ left: leftEdge(LEFT_RATE.i + 1, '-52px'), top: STAGE_H * 0.5 }}
+    >
+      <path
+        d={`M 18 2 C -4 6, -4 ${SPAN_H - 20}, 42 ${SPAN_H - 8}`}
+        stroke="#0B6E8A"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d={`M 34 ${SPAN_H - 17} L 43 ${SPAN_H - 8} L 31 ${SPAN_H - 4}`}
         stroke="#0B6E8A"
         strokeWidth="2"
         strokeLinecap="round"
@@ -251,12 +290,10 @@ function Funnel({
         ))}
 
         {/* Telas grandes: balão da taxa lead -> consulta agendada, à esquerda do funil */}
+        <ArrowSpan />
         <div
           className="absolute hidden w-[104px] lg:block"
-          style={{
-            left: leftEdge(LEFT_RATE.i + 1, '-120px'),
-            top: LEFT_RATE.i * PITCH + STAGE_H + GAP / 2 - 22,
-          }}
+          style={{ left: LEFT_CHIP.left(), top: LEFT_CHIP.top }}
         >
           <RateChip value={rates.agendamentoLead} name={LEFT_RATE.name} title={LEFT_RATE.title} />
         </div>
