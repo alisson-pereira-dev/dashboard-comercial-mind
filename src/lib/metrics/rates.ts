@@ -18,7 +18,8 @@ export function funnelRatesFromGoals(m: {
   const r = (n: number | null, d: number | null) => (n === null || d === null ? null : ratio(n, d))
   return {
     qualificacao: r(m.leads_qualificados, m.leads),
-    agendamento: r(m.consultas_agendadas, m.leads),
+    agendamento: r(m.consultas_agendadas, m.leads_qualificados),
+    agendamentoLead: r(m.consultas_agendadas, m.leads),
     comparecimento: r(m.comparecimentos, m.consultas_agendadas),
     conversaoConsulta: r(m.vendas, m.comparecimentos),
   }
@@ -27,7 +28,8 @@ export function funnelRatesFromGoals(m: {
 export function funnelRates(f: Funnel): Rates {
   return {
     qualificacao: ratio(f.leadsQualificados, f.leads),
-    agendamento: ratio(f.consultasAgendadas, f.leads),
+    agendamento: ratio(f.consultasAgendadas, f.leadsQualificados),
+    agendamentoLead: ratio(f.consultasAgendadas, f.leads),
     comparecimento: ratio(f.comparecimentos, f.consultasAgendadas),
     conversaoConsulta: ratio(f.vendas, f.comparecimentos),
   }

@@ -26,7 +26,10 @@ export const EXTRA_HELP = {
   metaFaturamento:
     'Quanto do faturamento total já foi feito em relação à meta cadastrada para o período.',
   qualificacao: 'Leads qualificados divididos pelos leads. Mostra quantos leads viram MQL.',
-  agendamento: 'Consultas agendadas divididas pelos leads. Mostra quantos leads chegam a marcar consulta.',
+  agendamento:
+    'Consultas agendadas divididas pelos leads qualificados. Mostra quantos MQL chegam a marcar consulta.',
+  agendamentoLead:
+    'Consultas agendadas divididas pelos leads totais. Mostra quantos leads chegam a marcar consulta, sem passar pela qualificação.',
   comparecimento:
     'Comparecimentos divididos pelas consultas agendadas. Mostra quantas consultas marcadas acontecem.',
   conversaoConsulta:

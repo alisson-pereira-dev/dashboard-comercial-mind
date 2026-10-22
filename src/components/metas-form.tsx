@@ -61,15 +61,16 @@ function ExplicacaoModo({ modo }: { modo: Modo }) {
             As outras etapas aparecem sozinhas (campos tracejados com ícone de calculadora):
             <ul className="mt-1 list-disc space-y-0.5 pl-5">
               <li>Leads qualificados = Leads × taxa de qualificação</li>
-              <li>Consultas agendadas = Leads × taxa de agendamento</li>
+              <li>Consultas agendadas = Leads qualificados × taxa de agendamento</li>
               <li>Comparecimentos = Consultas agendadas × taxa de comparecimento</li>
               <li>Vendas = Comparecimentos × taxa de conversão</li>
             </ul>
           </li>
         </ol>
         <p className="mt-2 text-[13px]">
-          <b>Exemplo:</b> 1.000 leads com 40% de qualificação dão 400 leads qualificados; com 20% de agendamento, 200
-          consultas agendadas. Os resultados são arredondados para número inteiro.
+          <b>Exemplo:</b> 1.000 leads com 40% de qualificação dão 400 leads qualificados; com 20% de agendamento, 80
+          consultas agendadas. O balão à esquerda do funil mostra a taxa das consultas sobre os leads totais (aqui, 8%),
+          só para leitura. Os resultados são arredondados para número inteiro.
         </p>
       </div>
     )
@@ -367,8 +368,9 @@ export function MetasForm({
             />
           </div>
           <p className="mt-4 text-center text-xs text-muted">
-            Qualificação e agendamento são calculados sobre os leads; comparecimento, sobre as consultas agendadas; conversão,
-            sobre os comparecimentos. As taxas não são salvas: só as metas.
+            Qualificação é calculada sobre os leads; agendamento, sobre os leads qualificados; comparecimento, sobre as consultas
+            agendadas; conversão, sobre os comparecimentos. O balão à esquerda (agend. sobre leads) é consultas agendadas ÷
+            leads totais. As taxas não são salvas: só as metas.
           </p>
         </section>
       </div>

@@ -11,7 +11,8 @@ describe('funnelRatesFromGoals', () => {
       vendas: 3,
     })
     expect(r.qualificacao).toBe(0.5)
-    expect(r.agendamento).toBe(0.2)
+    expect(r.agendamento).toBe(0.4) // 30 / 75 qualificados
+    expect(r.agendamentoLead).toBe(0.2) // 30 / 150 leads
     expect(r.comparecimento).toBe(0.5)
     expect(r.conversaoConsulta).toBe(0.2)
   })
@@ -24,8 +25,23 @@ describe('funnelRatesFromGoals', () => {
       vendas: 150,
     })
     expect(r.qualificacao).toBeNull()
-    expect(r.agendamento).toBe(1)
+    expect(r.agendamento).toBeNull() // sem meta de qualificados
+    expect(r.agendamentoLead).toBe(1)
     expect(r.conversaoConsulta).toBeNull()
+  })
+})
+
+describe('agendamento: sobre os qualificados e sobre os leads', () => {
+  it('130 leads, 50 qualificados e 15 consultas dão 30% e 11,5%', () => {
+    const r = funnelRates({ leads: 130, leadsQualificados: 50, consultasAgendadas: 15, comparecimentos: 0, vendas: 0 })
+    expect(r.agendamento).toBeCloseTo(0.3, 5)
+    expect(r.agendamentoLead).toBeCloseTo(15 / 130, 5)
+    expect(Math.round((r.agendamentoLead ?? 0) * 1000) / 10).toBe(11.5)
+  })
+  it('sem qualificados, a taxa sobre os qualificados fica sem dados e a sobre os leads continua', () => {
+    const r = funnelRates({ leads: 100, leadsQualificados: 0, consultasAgendadas: 2, comparecimentos: 0, vendas: 0 })
+    expect(r.agendamento).toBeNull()
+    expect(r.agendamentoLead).toBe(0.02)
   })
 })
 
@@ -42,7 +58,7 @@ describe('ratio', () => {
 })
 
 describe('funnelRates', () => {
-  it('calcula as 4 taxas do funil', () => {
+  it('calcula as taxas do funil', () => {
     const rates = funnelRates({
       leads: 100,
       leadsQualificados: 40,
@@ -51,7 +67,8 @@ describe('funnelRates', () => {
       vendas: 5,
     })
     expect(rates.qualificacao).toBe(0.4)
-    expect(rates.agendamento).toBe(0.2)
+    expect(rates.agendamento).toBe(0.5) // 20 / 40 qualificados
+    expect(rates.agendamentoLead).toBe(0.2) // 20 / 100 leads
     expect(rates.comparecimento).toBe(0.5)
     expect(rates.conversaoConsulta).toBe(0.5)
   })

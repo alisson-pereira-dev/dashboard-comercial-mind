@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { METRIC_KEYS } from './metrics/types'
-import { editar, modoInicial, taxasDe, TAXAS_VAZIAS, type Estado, type Valores } from './metas-edit'
+import { agendamentoSobreLeads, editar, modoInicial, taxasDe, TAXAS_VAZIAS, type Estado, type Valores } from './metas-edit'
 
 const vazio = Object.fromEntries(METRIC_KEYS.map((k) => [k, ''])) as Valores
 
@@ -16,7 +16,7 @@ const estado = (): Estado => ({ valores: { ...base }, taxas: taxasDe(base) })
 
 describe('taxasDe', () => {
   it('calcula a taxa implícita nos valores', () => {
-    expect(taxasDe(base)).toEqual({ qualificacao: '40', agendamento: '20', comparecimento: '50', conversao: '50' })
+    expect(taxasDe(base)).toEqual({ qualificacao: '40', agendamento: '50', comparecimento: '50', conversao: '50' })
   })
   it('deixa vazio quando falta a base ou o valor', () => {
     expect(taxasDe(vazio)).toEqual(TAXAS_VAZIAS)
@@ -41,15 +41,22 @@ describe('editar: valores do funil', () => {
 
   it('editar uma etapa ajusta a taxa que leva até ela e recalcula as seguintes', () => {
     const r = editar(estado(), { tipo: 'valor', chave: 'consultas_agendadas' }, '30')
-    expect(r.taxas.agendamento).toBe('30')
+    expect(r.taxas.agendamento).toBe('75') // 30 / 40 qualificados
     expect(r.valores.comparecimentos).toBe('15') // 30 x 50%
     expect(r.valores.vendas).toBe('8') // 15 x 50%, arredondado
     expect(r.valores.leads).toBe('100') // nunca recalcula para trás
   })
 
-  it('editar uma etapa sem dependentes só ajusta a própria taxa', () => {
+  it('editar os qualificados ajusta a taxa de qualificação e recalcula as consultas pela taxa de agendamento', () => {
     const r = editar(estado(), { tipo: 'valor', chave: 'leads_qualificados' }, '60')
     expect(r.taxas.qualificacao).toBe('60')
+    expect(r.valores.consultas_agendadas).toBe('30') // 60 x 50%
+    expect(r.valores.leads).toBe('100')
+  })
+
+  it('editar uma etapa sem dependentes só ajusta a própria taxa', () => {
+    const r = editar(estado(), { tipo: 'valor', chave: 'vendas' }, '4')
+    expect(r.taxas.conversao).toBe('40')
     expect(r.auto).toEqual([])
   })
 
@@ -67,10 +74,10 @@ describe('editar: valores do funil', () => {
 
 describe('editar: taxas', () => {
   it('editar uma taxa recalcula a etapa seguinte e as que dependem dela', () => {
-    const r = editar(estado(), { tipo: 'taxa', chave: 'agendamento' }, '50')
-    expect(r.valores.consultas_agendadas).toBe('50')
-    expect(r.valores.comparecimentos).toBe('25')
-    expect(r.valores.vendas).toBe('13') // 12,5 arredonda para 13
+    const r = editar(estado(), { tipo: 'taxa', chave: 'agendamento' }, '75')
+    expect(r.valores.consultas_agendadas).toBe('30') // 40 qualificados x 75%
+    expect(r.valores.comparecimentos).toBe('15')
+    expect(r.valores.vendas).toBe('8') // 7,5 arredonda para 8
     expect(r.valores.leads_qualificados).toBe('40') // taxa de qualificação não muda
   })
 
@@ -83,7 +90,7 @@ describe('editar: taxas', () => {
 
   it('preencher só os leads e as taxas monta o funil inteiro', () => {
     let e: Estado = { valores: { ...vazio }, taxas: { ...TAXAS_VAZIAS } }
-    for (const [chave, texto] of [['qualificacao', '40'], ['agendamento', '20'], ['comparecimento', '50'], ['conversao', '50']] as const) {
+    for (const [chave, texto] of [['qualificacao', '40'], ['agendamento', '50'], ['comparecimento', '50'], ['conversao', '50']] as const) {
       e = editar(e, { tipo: 'taxa', chave }, texto)
     }
     e = editar(e, { tipo: 'valor', chave: 'leads' }, '150')
@@ -120,7 +127,7 @@ describe('modo manual', () => {
     const r = editar(estado(), { tipo: 'valor', chave: 'leads' }, '200', 'manual')
     expect(r.valores).toMatchObject({ leads: '200', leads_qualificados: '40', consultas_agendadas: '20', comparecimentos: '10', vendas: '5' })
     expect(r.taxas.qualificacao).toBe('20') // 40 / 200
-    expect(r.taxas.agendamento).toBe('10')
+    expect(r.taxas.agendamento).toBe('50') // 20 / 40 qualificados
     expect(r.auto).toEqual([])
   })
   it('o total do faturamento continua sendo a soma', () => {
@@ -136,5 +143,22 @@ describe('modoInicial', () => {
   it('abre em automático quando o funil está vazio', () => {
     expect(modoInicial(vazio)).toBe('automatico')
     expect(modoInicial({ ...vazio, faturamento_total: '100' })).toBe('automatico')
+  })
+})
+
+describe('agendamentoSobreLeads', () => {
+  it('é consultas agendadas sobre os leads totais', () => {
+    expect(agendamentoSobreLeads({ ...vazio, leads: '130', consultas_agendadas: '15' })).toBe('11.54')
+    expect(agendamentoSobreLeads(base)).toBe('20')
+  })
+  it('fica vazio sem leads ou sem consultas', () => {
+    expect(agendamentoSobreLeads(vazio)).toBe('')
+    expect(agendamentoSobreLeads({ ...vazio, leads: '0', consultas_agendadas: '5' })).toBe('')
+    expect(agendamentoSobreLeads({ ...vazio, leads: '100' })).toBe('')
+  })
+  it('não é uma das taxas que calculam as etapas', () => {
+    const r = editar(estado(), { tipo: 'valor', chave: 'leads' }, '200')
+    expect(Object.keys(r.taxas)).not.toContain('agendamentoLead')
+    expect(agendamentoSobreLeads(r.valores)).toBe('20') // 40 / 200
   })
 })

@@ -2,8 +2,8 @@
 
 import { Calculator, Pencil } from 'lucide-react'
 import { METRIC_LABELS, type MetricKey } from '@/lib/metrics'
-import { ETAPAS_FUNIL, TAXAS, type Modo, type TaxaKey, type Taxas, type Valores } from '@/lib/metas-edit'
-import { Arrow, GAP, GOAL_BG, PITCH, STAGE_H, Shape, edge } from './goal-funnels'
+import { ETAPAS_FUNIL, TAXAS, agendamentoSobreLeads, type Modo, type TaxaKey, type Taxas, type Valores } from '@/lib/metas-edit'
+import { Arrow, FUNNEL_PAD, GAP, GOAL_BG, LEFT_RATE, PITCH, STAGE_H, Shape, edge, leftEdge } from './goal-funnels'
 
 // Destaque nos campos que acabaram de ser calculados automaticamente.
 export const DESTAQUE = 'border-brand bg-brand-50 ring-2 ring-brand/40'
@@ -101,6 +101,21 @@ function TaxaEditor({
   )
 }
 
+// Balão só de leitura: consultas agendadas sobre os leads totais (não é digitado nem calcula nada).
+function TaxaLeitura({ valor }: { valor: string }) {
+  return (
+    <div className="rounded-2xl bg-brand-50 px-2 py-1.5 text-center" title={LEFT_RATE.title}>
+      <p
+        className="text-sm font-bold text-navy"
+        aria-label={`Taxa de agendamento sobre os leads: ${valor === '' ? 'sem dados' : valor + ' por cento'}`}
+      >
+        {valor === '' ? '-' : `${valor} %`}
+      </p>
+      <p className="text-[11px] leading-tight text-brand-ink">{LEFT_RATE.name}</p>
+    </div>
+  )
+}
+
 // Funil de metas editável. No modo automático digita-se os Leads e as taxas; no manual, cada etapa.
 // Quem calcula o que muda é `editar` em lib/metas-edit.ts.
 export function MetasFunnel({
@@ -121,10 +136,11 @@ export function MetasFunnel({
   onTaxa: (chave: TaxaKey, texto: string) => void
 }) {
   const automatico = modo === 'automatico'
+  const agendSobreLeads = agendamentoSobreLeads(valores)
 
   return (
     <div className="relative">
-      <div className="flex flex-col gap-1.5 lg:gap-[14px] lg:pr-[150px]">
+      <div className={`flex flex-col gap-1.5 lg:gap-[14px] ${FUNNEL_PAD}`}>
         {ETAPAS_FUNIL.map((key, i) => {
           const calculado = automatico && key !== 'leads'
           return (
@@ -144,7 +160,8 @@ export function MetasFunnel({
 
               {/* Celular e telas médias: a taxa fica entre as etapas, em linha */}
               {i < TAXAS.length ? (
-                <div className="mt-1.5 flex justify-center lg:hidden">
+                <div className="mt-1.5 flex items-center justify-center gap-2 lg:hidden">
+                  {i === LEFT_RATE.i ? <TaxaLeitura valor={agendSobreLeads} /> : null}
                   <TaxaEditor
                     indice={i}
                     valor={taxas[TAXAS[i].key]}
@@ -177,6 +194,17 @@ export function MetasFunnel({
           </div>
         </div>
       ))}
+
+      {/* Telas grandes: taxa lead -> consulta agendada, à esquerda do funil */}
+      <div
+        className="absolute hidden w-[108px] lg:block"
+        style={{
+          left: leftEdge(LEFT_RATE.i + 1, '-124px'),
+          top: LEFT_RATE.i * PITCH + STAGE_H + GAP / 2 - 24,
+        }}
+      >
+        <TaxaLeitura valor={agendSobreLeads} />
+      </div>
     </div>
   )
 }

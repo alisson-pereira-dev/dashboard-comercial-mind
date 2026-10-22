@@ -16,14 +16,29 @@ export const WIDTHS = [100, 88, 76, 64, 54]
 export const STAGE_H = 78
 export const GAP = 14
 export const PITCH = STAGE_H + GAP
-// Espaço à direita do funil para as setas e os balões das taxas (telas grandes).
+// Espaços laterais do funil (telas grandes): à direita, setas e balões das taxas entre etapas;
+// à esquerda, o balão da taxa lead -> consulta agendada.
 const SIDE = 150
+const SIDE_L = 110
+export const FUNNEL_PAD = 'lg:pl-[110px] lg:pr-[150px]'
 const ARROW_H = 80
 
 const REAL_BG = ['#0B7F98', '#27C2DA', '#6ED9EB', '#9BE5F1', '#BFEFF7']
 export const GOAL_BG = '#BDEBFA'
 
 const RATE_NAMES = ['qualificação', 'agendamento', 'comparecimento', 'conversão'] as const
+const RATE_TITLES = [
+  'Leads qualificados ÷ leads',
+  'Consultas agendadas ÷ leads qualificados (do MQL para a consulta)',
+  'Comparecimentos ÷ consultas agendadas',
+  'Vendas ÷ comparecimentos',
+]
+// Taxa extra, à esquerda do funil, entre Leads qualificados e Consultas agendadas.
+export const LEFT_RATE = {
+  i: 1,
+  name: 'agend. sobre leads',
+  title: 'Consultas agendadas ÷ leads totais (do lead direto para a consulta)',
+} as const
 
 const STATUS_DOT: Record<GoalStatus, string> = {
   abaixo: 'var(--status-abaixo)',
@@ -45,9 +60,13 @@ function insetOf(i: number) {
   return (diff / 2 / WIDTHS[i]) * 100
 }
 
-// Borda direita da etapa i, em calc() sobre a largura do funil (sem o espaço lateral).
+// Borda direita da etapa i, em calc() sobre a largura do funil (sem os espaços laterais).
 export const edge = (i: number, extra = '0px') =>
-  `calc((100% - ${SIDE}px) * ${0.5 + WIDTHS[i] / 200} + ${extra})`
+  `calc(${SIDE_L}px + (100% - ${SIDE_L + SIDE}px) * ${0.5 + WIDTHS[i] / 200} + ${extra})`
+
+// Borda esquerda da etapa i, na mesma escala.
+export const leftEdge = (i: number, extra = '0px') =>
+  `calc(${SIDE_L}px + (100% - ${SIDE_L + SIDE}px) * ${0.5 - WIDTHS[i] / 200} + ${extra})`
 
 // O fundo recortado fica separado do conteúdo, para o balão do "!" não ser cortado.
 export function Shape({
@@ -143,7 +162,7 @@ function Funnel({
       <h3 className="text-center text-sm font-bold uppercase tracking-wide text-navy">{heading}</h3>
 
       <div className="relative mt-4">
-        <div className="flex flex-col gap-1.5 lg:gap-[14px] lg:pr-[150px]">
+        <div className={`flex flex-col gap-1.5 lg:gap-[14px] ${FUNNEL_PAD}`}>
           {stages.map((s, i) => {
             const progress = goalProgress(s.value, s.meta)
             const status = goalStatus(s.value, s.meta)
@@ -203,8 +222,11 @@ function Funnel({
 
                 {/* Celular: a taxa aparece entre as etapas, em linha */}
                 {i < stages.length - 1 ? (
-                  <div className="mt-1.5 flex justify-center lg:hidden">
-                    <RateChip value={rateValues[i]} name={RATE_NAMES[i]} />
+                  <div className="mt-1.5 flex justify-center gap-2 lg:hidden">
+                    {i === LEFT_RATE.i ? (
+                      <RateChip value={rates.agendamentoLead} name={LEFT_RATE.name} title={LEFT_RATE.title} />
+                    ) : null}
+                    <RateChip value={rateValues[i]} name={RATE_NAMES[i]} title={RATE_TITLES[i]} />
                   </div>
                 ) : null}
               </div>
@@ -223,10 +245,21 @@ function Funnel({
                 top: i * PITCH + STAGE_H + GAP / 2 - 22,
               }}
             >
-              <RateChip value={rateValues[i]} name={name} />
+              <RateChip value={rateValues[i]} name={name} title={RATE_TITLES[i]} />
             </div>
           </div>
         ))}
+
+        {/* Telas grandes: balão da taxa lead -> consulta agendada, à esquerda do funil */}
+        <div
+          className="absolute hidden w-[104px] lg:block"
+          style={{
+            left: leftEdge(LEFT_RATE.i + 1, '-120px'),
+            top: LEFT_RATE.i * PITCH + STAGE_H + GAP / 2 - 22,
+          }}
+        >
+          <RateChip value={rates.agendamentoLead} name={LEFT_RATE.name} title={LEFT_RATE.title} />
+        </div>
       </div>
     </div>
   )

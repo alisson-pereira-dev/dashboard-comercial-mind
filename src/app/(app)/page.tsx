@@ -376,9 +376,9 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
             label="Taxa de agendamento"
             help={EXTRA_HELP.agendamento}
             value={ratesB.agendamento}
-            from="Leads"
+            from="Leads qualificados"
             to="Consultas agendadas"
-            caption={`${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')} / ${plural(b.leads, 'lead', 'leads')}`}
+            caption={`${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')} / ${plural(b.leads_qualificados, 'qualificado', 'qualificados')}`}
           />
           <RateCard
             icon={Users}

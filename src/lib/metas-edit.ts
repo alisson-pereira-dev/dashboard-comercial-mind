@@ -15,13 +15,22 @@ export type Taxas = Record<TaxaKey, string> // percentual em texto, ex.: "58.5"
  */
 export type Modo = 'automatico' | 'manual'
 
-// Mesmas fórmulas do dashboard: qualificação e agendamento são sobre os leads.
+// Mesmas fórmulas do dashboard: qualificação é sobre os leads; agendamento, sobre os leads
+// qualificados; comparecimento, sobre as consultas agendadas; conversão, sobre os comparecimentos.
 export const TAXAS: { key: TaxaKey; base: MetricKey; alvo: MetricKey; nome: string; formula: string }[] = [
   { key: 'qualificacao', base: 'leads', alvo: 'leads_qualificados', nome: 'qualificação', formula: 'Leads qualificados ÷ leads' },
-  { key: 'agendamento', base: 'leads', alvo: 'consultas_agendadas', nome: 'agendamento', formula: 'Consultas agendadas ÷ leads' },
+  { key: 'agendamento', base: 'leads_qualificados', alvo: 'consultas_agendadas', nome: 'agendamento', formula: 'Consultas agendadas ÷ leads qualificados' },
   { key: 'comparecimento', base: 'consultas_agendadas', alvo: 'comparecimentos', nome: 'comparecimento', formula: 'Comparecimentos ÷ consultas agendadas' },
   { key: 'conversao', base: 'comparecimentos', alvo: 'vendas', nome: 'conversão', formula: 'Vendas ÷ comparecimentos' },
 ]
+
+// Taxa só de leitura mostrada no funil: consultas agendadas sobre os leads totais. Não é digitada
+// nem entra no cálculo das etapas (as etapas saem das 4 taxas acima).
+export function agendamentoSobreLeads(valores: Valores): string {
+  const base = num(valores.leads)
+  const alvo = num(valores.consultas_agendadas)
+  return base !== null && base > 0 && alvo !== null ? duasCasas((alvo / base) * 100) : ''
+}
 
 export const ETAPAS_FUNIL: MetricKey[] = ['leads', 'leads_qualificados', 'consultas_agendadas', 'comparecimentos', 'vendas']
 

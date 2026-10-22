@@ -22,7 +22,10 @@ export type Funnel = {
 
 export type Rates = {
   qualificacao: number | null
+  /** Consultas agendadas / leads qualificados (MQL para consulta). */
   agendamento: number | null
+  /** Consultas agendadas / leads totais (lead direto para consulta). */
+  agendamentoLead: number | null
   comparecimento: number | null
   conversaoConsulta: number | null
 }
