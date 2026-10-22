@@ -361,7 +361,8 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
             />
           }
         />
-        <div className="grid gap-4 xl:grid-cols-2">
+        {/* Cinco cartões numa linha em telas largas; abaixo disso, duas colunas e depois uma */}
+        <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-5">
           <RateCard
             icon={Filter}
             label="Taxa de qualificação"
