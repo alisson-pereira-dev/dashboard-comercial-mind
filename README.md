@@ -31,6 +31,7 @@ Variáveis de ambiente do serviço (sem espaços no início ou no fim dos valore
 | `GHL_TOKEN` | Segredo. Token `pit-...` da sub-conta |
 | `GHL_LOCATION_ID` | Id da sub-conta (location) |
 | `GHL_VENDEDORES_IDS` | Ids de usuário do GHL, separados por vírgula. O primeiro é o padrão |
+| `GHL_PIPELINE_FUNIL` | Opcional. Nome exato do pipeline do funil. Padrão: `Qualificação ( IA )` |
 
 O `.dockerignore` mantém qualquer `.env` fora da imagem.
 

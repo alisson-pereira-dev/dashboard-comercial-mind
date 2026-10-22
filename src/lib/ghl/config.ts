@@ -4,8 +4,10 @@ export const GHL_FIELD_MQL_ID = process.env.GHL_FIELD_MQL_ID ?? 'MVQhUw5Vxr7PVvi
 export const GHL_FIELD_INICIO_TRATAMENTO_ID =
   process.env.GHL_FIELD_INICIO_TRATAMENTO_ID ?? 'gs5tLZ5CXwb1HjXFBsyy'
 
-// Pipelines de pacientes já em tratamento: não contam como venda nem MQL do funil.
-export const PIPELINES_FORA_DO_FUNIL = ['Clientes da base']
+// Pipeline em que o funil é medido (decisão de 22/10/2026): leads, leads qualificados e vendas são
+// oportunidades deste pipeline. Os demais (Clientes da base, Geladeira, Reativação) ficam de fora.
+// Mude por GHL_PIPELINE_FUNIL se o nome no GHL for outro nesta clínica.
+export const PIPELINE_FUNIL = process.env.GHL_PIPELINE_FUNIL?.trim() || 'Qualificação ( IA )'
 
 // Janela de agendamentos buscada no sync.
 export const EVENTOS_DIAS_PASSADO = 730

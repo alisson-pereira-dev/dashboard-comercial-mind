@@ -2,15 +2,15 @@ import type { MetricKey } from './types'
 
 // Texto do "!" de cada número. Mantenha em sincronia com src/lib/dashboard/queries.ts.
 export const METRIC_HELP: Record<MetricKey, string> = {
-  leads: 'Contatos criados no GHL dentro do período.',
+  leads: 'Oportunidades criadas dentro do período no pipeline Qualificação (IA) do GHL.',
   leads_qualificados:
-    'Oportunidades criadas no período com o campo TRAQ MQL marcado. Não entram pacientes do pipeline Clientes da base.',
+    'Oportunidades do pipeline Qualificação (IA) criadas no período com o campo TRAQ MQL marcado.',
   consultas_agendadas:
     'Agendamentos do calendário criados no período. Os cancelados não entram.',
   comparecimentos:
     'Agendamentos marcados como "compareceu" no calendário, criados dentro do período (data "criado em" do GHL).',
   vendas:
-    'Oportunidades ganhas que foram criadas dentro do período (data "criado em" do GHL). Não entram pacientes do pipeline Clientes da base.',
+    'Oportunidades do pipeline Qualificação (IA) que foram criadas dentro do período (data "criado em" do GHL) e estão ganhas.',
   consultas_novas:
     'Quantidade de vendas do período de contatos sem data de início de tratamento no GHL.',
   faturamento_consultas:

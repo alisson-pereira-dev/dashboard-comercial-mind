@@ -106,7 +106,7 @@ Confirmar caminho, parâmetros e `Version` na documentação da API v2 antes de 
 | Endpoint | Alimenta | Uso no dashboard |
 | --- | --- | --- |
 | `opportunities/search` | Bloco 1 | Vendas (ganhas), tipo consulta/tratamento, valor, datas de criação e fechamento |
-| Contatos (`contacts`) | Bloco 1 | Leads (criados no período) e leads qualificados (MQL) |
+| Contatos (`contacts`) | Bloco 1 | Cadastro de contatos (tipo da venda, responsável). Desde 22/10/2026 NÃO é a fonte de Leads |
 | Calendário (eventos/agendamentos) | Bloco 1 | Consultas agendadas e comparecimentos (status do evento) |
 | `payments/transactions` | Bloco 1 | Faturamento em consultas, tratamentos e total |
 | Usuários (`users`) | Bloco 1 e fase 2 | Responsáveis (e atividades na fase 2) |
@@ -119,19 +119,20 @@ Fluxo do sync: buscar no GHL, mapear, gravar por upsert no Supabase (chave = id 
 
 | Etapa | Definição |
 | --- | --- |
-| Leads | Contatos criados no período |
-| Leads qualificados | Contatos ou oportunidades marcados como MQL |
+| Leads | Oportunidades criadas no período no pipeline do funil (`PIPELINE_FUNIL`) |
+| Leads qualificados | Oportunidades do pipeline do funil marcadas como MQL |
 | Consultas agendadas | Eventos de calendário criados no período |
 | Comparecimentos | Eventos com status "compareceu" |
 | Vendas | Oportunidades ganhas ou pedidos pagos no período |
 
 **Como cada número é contado no banco** (implementado em `src/lib/dashboard/queries.ts`)
 
-- Leads: contatos com `criado_em` no período.
-- Leads qualificados: oportunidades com `mql` e `criado_em` no período, fora dos pipelines de `PIPELINES_FORA_DO_FUNIL`.
+- Pipeline do funil (decisão de 22/10/2026): `PIPELINE_FUNIL` em `src/lib/ghl/config.ts`, padrão `Qualificação ( IA )` (nome exato do GHL, com espaços nos parênteses), sobrescrevível por `GHL_PIPELINE_FUNIL`. Leads, leads qualificados e vendas contam só oportunidades desse pipeline; se o nome mudar no GHL, os números caem para zero até a variável ser ajustada.
+- Leads: oportunidades do pipeline do funil com `criado_em` no período (conta oportunidades, não pessoas). Não é o número de contatos: em out/2026 são 118 oportunidades contra 145 contatos criados.
+- Leads qualificados: oportunidades do pipeline do funil com `mql` e `criado_em` no período.
 - Consultas agendadas: agendamentos não cancelados com `criado_em` no período.
 - Comparecimentos: agendamentos com status `compareceu` e `criado_em` no período.
-- Vendas e faturamento: oportunidades `ganha` com `criado_em` no período, fora dos pipelines excluídos. `valor` é o `monetaryValue`.
+- Vendas e faturamento: oportunidades `ganha` do pipeline do funil com `criado_em` no período. `valor` é o `monetaryValue`.
 - Regra do período (decisão de 21/10/2026): **todos** os números do funil usam a data "Criado em" do próprio registro no GHL (contato, oportunidade e agendamento). Consequência: uma venda ganha hoje de uma oportunidade criada em agosto conta em agosto, e o mês atual tende a subestimar vendas e faturamento. `fechado_em` e `data_inicio` continuam gravados, mas não entram nas contagens.
 - Período: fuso fixo de Brasília (-03:00). Mês atual por padrão, ou intervalo `de` e `ate`. Atalhos: mês atual, mês anterior, últimos 7 e últimos 30 dias.
 - Cada bloco tem o próprio filtro de período, com parâmetros próprios na URL: `meta_mes`, `meta_de`, `meta_ate` (Realizado vs. metas) e `vendas_mes`, `vendas_de`, `vendas_ate` (funil, meta de faturamento, taxas e números de vendas; o seletor fica no cartão Meta de faturamento). Componente: `src/components/period-filter.tsx`.
@@ -165,7 +166,7 @@ Se o denominador for zero, a taxa é "sem dados" (não 0%). Exibir "-" no lugar 
 - Dono da venda: o responsável (`assignedTo`) da oportunidade. Leads usam o responsável do contato e agendamentos o do evento.
 - Registro sem responsável no GHL conta para o vendedor padrão, que é o primeiro id de `GHL_VENDEDORES_IDS` (Gabriela). Motivo: o agente de IA só repassava a venda para ela e não será mais usado, e hoje 30 das 31 vendas ganhas não têm responsável. A atribuição é só no dashboard (`responsavel_padrao = true`); nada é escrito no GHL. Quando o cliente passar a atribuir responsáveis no GHL, o valor do GHL prevalece.
 - Metas por vendedor: `metas.usuario_id`, com `'clinica'` para a meta geral. Vendedor selecionado usa só as metas dele; "Clínica toda" usa as gerais.
-- Pipelines do funil de vendas: `Qualificação` e `Qualificação ( IA )`. `Clientes da base` são pacientes já em tratamento e não entram como lead novo.
+- Pipeline do funil: só `Qualificação ( IA )` (ver regra de 22/10/2026 acima). Os outros (`Clientes da base`, `Geladeira ...`, `Reativação de leads`) ficam fora de leads, qualificados e vendas. Consultas agendadas e comparecimentos seguem contando agendamentos de qualquer contato.
 - Faturamento: `payments/transactions` retorna vazio nesta location. Usar `monetaryValue` das oportunidades ganhas, datadas pelo `criado_em` (regra de 21/10/2026; antes era `lastStatusChangeAt`).
 
 **Lacunas de dados no GHL (bloqueiam números do Bloco 1)**

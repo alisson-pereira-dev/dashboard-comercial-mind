@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { PIPELINES_FORA_DO_FUNIL } from '@/lib/ghl/config'
+import { PIPELINE_FUNIL } from '@/lib/ghl/config'
 import { METRIC_KEYS, type MetricKey, type Period } from '@/lib/metrics'
 
 export type Realizado = Record<MetricKey, number> & {
@@ -21,10 +21,6 @@ export type DashboardData = {
   temDados: boolean
   /** Registros do período que estavam sem responsável no GHL e foram atribuídos ao vendedor padrão. */
   atribuicaoPadrao: { leads: number; vendas: number }
-}
-
-function foraDoFunil() {
-  return `(${PIPELINES_FORA_DO_FUNIL.map((p) => `"${p}"`).join(',')})`
 }
 
 async function count(
@@ -91,8 +87,9 @@ export async function getDashboardData(
       count(
         por(
           supabase
-            .from('contatos')
+            .from('oportunidades')
             .select('id', head)
+            .eq('pipeline_nome', PIPELINE_FUNIL)
             .gte('criado_em', fromIso)
             .lt('criado_em', toIso),
         ),
@@ -103,7 +100,7 @@ export async function getDashboardData(
             .from('oportunidades')
             .select('id', head)
             .eq('mql', true)
-            .not('pipeline_nome', 'in', foraDoFunil())
+            .eq('pipeline_nome', PIPELINE_FUNIL)
             .gte('criado_em', fromIso)
             .lt('criado_em', toIso),
         ),
@@ -133,7 +130,7 @@ export async function getDashboardData(
           .from('oportunidades')
           .select('valor, tipo, responsavel_padrao')
           .eq('status', 'ganha')
-          .not('pipeline_nome', 'in', foraDoFunil())
+          .eq('pipeline_nome', PIPELINE_FUNIL)
           .gte('criado_em', fromIso)
           .lt('criado_em', toIso)
           .limit(5000),
@@ -158,8 +155,9 @@ export async function getDashboardData(
       vendedorId
         ? count(
             supabase
-              .from('contatos')
+              .from('oportunidades')
               .select('id', head)
+              .eq('pipeline_nome', PIPELINE_FUNIL)
               .eq('responsavel_id', vendedorId)
               .eq('responsavel_padrao', true)
               .gte('criado_em', fromIso)
