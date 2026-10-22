@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { connection } from 'next/server'
-import { BarChart3, CalendarDays, FilePlus2, FileText, Filter, Users } from 'lucide-react'
+import { BarChart3, CalendarDays, CalendarPlus, FilePlus2, FileText, Filter, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardData, getVendedores } from '@/lib/dashboard/queries'
 import type { DashboardData } from '@/lib/dashboard/queries'
@@ -373,12 +373,21 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
           />
           <RateCard
             icon={CalendarDays}
-            label="Taxa de agendamento"
+            label="Taxa de agendamento de MQL"
             help={EXTRA_HELP.agendamento}
             value={ratesB.agendamento}
             from="Leads qualificados"
             to="Consultas agendadas"
             caption={`${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')} / ${plural(b.leads_qualificados, 'qualificado', 'qualificados')}`}
+          />
+          <RateCard
+            icon={CalendarPlus}
+            label="Taxa de agendamento de leads"
+            help={EXTRA_HELP.agendamentoLead}
+            value={ratesB.agendamentoLead}
+            from="Leads"
+            to="Consultas agendadas"
+            caption={`${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')} / ${plural(b.leads, 'lead', 'leads')}`}
           />
           <RateCard
             icon={Users}
