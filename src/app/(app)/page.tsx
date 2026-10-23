@@ -82,9 +82,6 @@ function SectionHeader({
   )
 }
 
-const TRATAMENTO_AVISO =
-  'Sem data de início de tratamento no GHL, as vendas deste período estão contabilizadas como consultas novas.'
-
 const plural = (n: number, um: string, varios: string) => `${formatInt(n)} ${n === 1 ? um : varios}`
 
 function AtribuicaoNota({
@@ -462,7 +459,6 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
             value={b.tratamentosNovos}
           />
         </div>
-        {temDados && b.vendas > 0 && b.tratamentosNovos === 0 ? <Notice>{TRATAMENTO_AVISO}</Notice> : null}
       </section>
     </main>
   )

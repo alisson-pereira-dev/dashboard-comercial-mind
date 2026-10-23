@@ -5,6 +5,12 @@
 export type OportunidadeConsulta = {
   valor: number | string
   valor_tratamento?: number | string | null
+  status?: string
+}
+
+// Quantas das oportunidades estão ganhas (status "ganha"): os tratamentos novos.
+export function contaGanhas(oportunidades: OportunidadeConsulta[]): number {
+  return oportunidades.filter((o) => o.status === 'ganha').length
 }
 
 export function valorDeConsulta(o: OportunidadeConsulta): number {

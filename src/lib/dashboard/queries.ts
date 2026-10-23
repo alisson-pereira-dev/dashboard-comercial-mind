@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { ETAPAS_CONSULTA_IDS, PIPELINE_FUNIL } from '@/lib/ghl/config'
-import { somaConsultas, type OportunidadeConsulta } from '@/lib/metrics/faturamento'
+import { contaGanhas, somaConsultas, type OportunidadeConsulta } from '@/lib/metrics/faturamento'
 import { METRIC_KEYS, type MetricKey, type Period } from '@/lib/metrics'
 
 export type Realizado = Record<MetricKey, number> & {
@@ -82,10 +82,12 @@ export async function getDashboardData(
   const por = <T,>(q: T): T =>
     vendedorId ? (q as unknown as { eq(c: string, v: string): T }).eq('responsavel_id', vendedorId) : q
 
-  // Faturamento em consultas: valor das oportunidades criadas no período que estão nas etapas de
-  // consulta do pipeline do funil. O valor da oportunidade já inclui o tratamento quando ele foi
-  // fechado, então tiramos o Valor do tratamento para não contar o tratamento duas vezes.
-  const valorDasConsultas = async (): Promise<{ valor: number; oportunidades: number }> => {
+  // Oportunidades criadas no período que estão nas etapas de consulta do pipeline do funil. Dela saem:
+  // - faturamento em consultas: o valor, menos o Valor do tratamento (o valor da oportunidade já o
+  //   inclui quando o tratamento foi fechado; assim ele não conta duas vezes);
+  // - consultas novas: quantas são;
+  // - tratamentos novos: quantas já estão ganhas (consulta feita e convertida em tratamento).
+  const valorDasConsultas = async (): Promise<{ valor: number; oportunidades: number; ganhas: number }> => {
     const buscar = (colunas: string) =>
       por(
         supabase
@@ -97,12 +99,12 @@ export async function getDashboardData(
           .lt('criado_em', toIso)
           .limit(5000),
       )
-    let res = await buscar('valor, valor_tratamento')
+    let res = await buscar('valor, valor_tratamento, status')
     // Banco ainda sem a coluna valor_tratamento (migration por rodar): segue só com o valor.
-    if (res.error) res = await buscar('valor')
+    if (res.error) res = await buscar('valor, status')
     if (res.error) throw new Error(res.error.message)
     const linhas = (res.data ?? []) as unknown as OportunidadeConsulta[]
-    return { valor: somaConsultas(linhas), oportunidades: linhas.length }
+    return { valor: somaConsultas(linhas), oportunidades: linhas.length, ganhas: contaGanhas(linhas) }
   }
 
   const [
@@ -163,7 +165,7 @@ export async function getDashboardData(
       por(
         supabase
           .from('oportunidades')
-          .select('valor, tipo, responsavel_padrao')
+          .select('responsavel_padrao')
           .eq('status', 'ganha')
           .eq('pipeline_nome', PIPELINE_FUNIL)
           .gte('criado_em', fromIso)
@@ -218,8 +220,6 @@ export async function getDashboardData(
   if (metasRes.error) throw new Error(metasRes.error.message)
 
   const vendas = vendasRes.data ?? []
-  const consultas = vendas.filter((v) => v.tipo !== 'tratamento')
-  const tratamentos = vendas.filter((v) => v.tipo === 'tratamento')
   const tratamentoDisponivel = !tratamentoRes.error
   const comValorTratamento = tratamentoDisponivel ? (tratamentoRes.data ?? []) : []
   const faturamentoTratamentos = comValorTratamento.reduce((acc, r) => acc + Number(r.valor_tratamento), 0)
@@ -233,8 +233,8 @@ export async function getDashboardData(
     faturamento_consultas: consultasValor.valor,
     faturamento_tratamentos: faturamentoTratamentos,
     faturamento_total: consultasValor.valor + faturamentoTratamentos,
-    consultas_novas: consultas.length,
-    tratamentosNovos: tratamentos.length,
+    consultas_novas: consultasValor.oportunidades,
+    tratamentosNovos: consultasValor.ganhas,
   }
 
   const metas = Object.fromEntries(METRIC_KEYS.map((k) => [k, null])) as Record<

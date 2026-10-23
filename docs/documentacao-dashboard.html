@@ -518,7 +518,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
   <div class="tw"><table>
     <thead><tr><th>Recurso do GHL</th><th>O que lemos</th><th>Para que usamos</th></tr></thead>
     <tbody>
-      <tr><td><b>Contatos</b><br><code>contacts</code></td><td>Identificador, nome, origem (<i>source</i>), data de criação, responsável, data de atualização e <b>um campo personalizado</b>: <code>data_inicio_tratamento</code>.</td><td>Tipo da venda (consulta ou tratamento) e responsável. Não é mais a fonte de Leads.</td></tr>
+      <tr><td><b>Contatos</b><br><code>contacts</code></td><td>Identificador, nome, origem (<i>source</i>), data de criação, responsável, data de atualização e <b>um campo personalizado</b>: <code>data_inicio_tratamento</code>.</td><td>Cadastro e responsável do contato. Não é mais a fonte de Leads, nem do tipo da venda.</td></tr>
       <tr><td><b>Oportunidades</b><br><code>opportunities/search</code></td><td>Identificador, contato, pipeline, etapa, valor (<i>monetaryValue</i>), status (aberta, ganha, perdida), data de criação, data da última mudança de status, responsável e <b>dois campos personalizados</b>: <code>TRAQ MQL</code> e <code>Valor do tratamento</code>.</td><td>Leads qualificados, vendas, faturamento (valor da oportunidade e valor do tratamento) e responsável.</td></tr>
       <tr><td><b>Pipelines</b><br><code>opportunities/pipelines</code></td><td>Identificador e nome de cada pipeline.</td><td>Saber a que pipeline cada oportunidade pertence (para medir o funil só no pipeline Qualificação (IA)).</td></tr>
       <tr><td><b>Calendários e eventos</b><br><code>calendars</code>, <code>calendars/events</code></td><td>Identificador, contato, data e hora de início, data de criação, status do agendamento, responsável e se foi apagado.</td><td>Consultas agendadas e comparecimentos.</td></tr>
@@ -664,10 +664,10 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
   <h3>7.3 Lead qualificado (MQL)</h3>
   <p>Uma oportunidade é considerada <b>qualificada</b> quando o campo <b>TRAQ MQL</b> está marcado. Esse campo é uma caixa de seleção da oportunidade e, quando marcado, guarda o valor "MQL". Não usamos tags nem outro critério.</p>
 
-  <h3>7.4 Tipo da venda: consulta ou tratamento</h3>
-  <p>O GHL não tem um campo "tipo de venda" na oportunidade. A regra adotada é:</p>
-  <div class="callout info"><span class="ic">i</span><div><p>Se o <b>contato</b> da oportunidade tem o campo <code>data_inicio_tratamento</code> preenchido, a venda é de <b>tratamento</b>. Caso contrário, é de <b>consulta</b>.</p></div></div>
-  <p>Consequência importante: se esse campo não for preenchido no GHL, todas as vendas viram "consulta" nos cartões <b>Consultas novas</b> e <b>Tratamentos novos</b>. É o que acontece hoje (ver capítulo <a href="#c14">14</a>). O faturamento em tratamentos não depende desse campo: vem do campo <b>Valor do tratamento</b> da oportunidade (7.6).</p>
+  <h3>7.4 Consultas novas e tratamentos novos</h3>
+  <p>Desde 23/10/2026 esses dois números vêm das <b>etapas do pipeline</b> Qualificação (IA), e não mais de um "tipo da venda":</p>
+  <div class="callout info"><span class="ic">i</span><div><p><b>Consultas novas</b> são as oportunidades criadas no período que estão nas etapas <b>Consulta Agendada</b> ou <b>Pós consulta</b>. <b>Tratamentos novos</b> são as dessas que estão marcadas como <b>ganhas</b>: a consulta aconteceu e virou tratamento.</p></div></div>
+  <p>O campo <code>data_inicio_tratamento</code> do contato, que antes definia esse tipo, <b>deixou de ser usado</b> nos números do painel. O faturamento em tratamentos continua vindo do campo <b>Valor do tratamento</b> da oportunidade (7.6).</p>
 
   <h3>7.5 Data da venda</h3>
   <p>Uma venda é datada pela <b>data de criação da oportunidade</b> no GHL (<code>createdAt</code>, a coluna <b>"Criado em"</b>), e só conta se hoje ela estiver com status <b>ganha</b>. Não é o dia em que ela foi marcada como ganha e não é a data de um pagamento.</p>
@@ -788,11 +788,13 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
   <article class="ficha">
     <header><h4>Vendas, consultas novas e tratamentos novos</h4><span class="badge b-calc">Cálculo próprio</span></header>
     <dl>
-      <dt>Em uma frase</dt><dd>A quantidade de vendas, dividida pelo tipo.</dd>
-      <dt>Como contamos</dt><dd><b>Consultas novas</b> = vendas do período de contatos sem data de início de tratamento. <b>Tratamentos novos</b> = vendas do período de contatos com data de início de tratamento. Consultas novas + tratamentos novos = vendas.</dd>
-      <dt>Exemplo (out/2026)</dt><dd>Consultas novas: <b>0</b>. Tratamentos novos: <b>0</b>.</dd>
+      <dt>Em uma frase</dt><dd>Vendas: oportunidades ganhas. Consultas novas: oportunidades que chegaram à consulta. Tratamentos novos: as que fecharam depois da consulta.</dd>
+      <dt>Como contamos</dt><dd><b>Consultas novas</b> = oportunidades do pipeline Qualificação (IA) criadas no período que estão nas etapas <b>Consulta Agendada</b> ou <b>Pós consulta</b>, de qualquer status. <b>Tratamentos novos</b> = dessas, as que estão <b>ganhas</b> (consulta feita e convertida em tratamento). <b>Vendas</b> = todas as ganhas do pipeline criadas no período, estejam em que etapa estiverem.</dd>
+      <dt>Data de referência</dt><dd>Data de criação da oportunidade ("Criado em").</dd>
+      <dt>Exemplo (out/2026)</dt><dd>Consultas novas: <b>9</b> (8 em Consulta Agendada e 1 em Pós consulta). Tratamentos novos: <b>0</b> (nenhuma está ganha). Em set/2026: 8 consultas novas, 2 tratamentos novos e 3 vendas.</dd>
+      <dt>Limitações</dt><dd>Usa a etapa em que a oportunidade está <b>agora</b>: se ela sair dessas etapas, deixa de contar. Os três números não somam entre si: tratamentos novos é parte de consultas novas, e vendas pode incluir ganhas que nunca passaram pelas etapas de consulta (por exemplo, 13 vendas e 12 tratamentos novos em jul/2026).</dd>
       <dt>Metas</dt><dd>Consultas novas tem meta cadastrável, em quantidade (cadastrada na página de Metas, no bloco de faturamento). Tratamentos novos não tem meta e aparece como "Sem meta cadastrada".</dd>
-    </dl>
+    
   </article>
 
   <div class="nextstep"><a href="#c7">← Anterior</a><a href="#c9">Próxima etapa: Taxas do funil →</a></div>
@@ -914,7 +916,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
       <tr><td><b>Faturamento total</b></td><td>Os dois faturamentos abaixo</td><td>Não há.</td><td>Não é guardado</td><td><b>Somar</b> consultas e tratamentos</td><td>Cartão Faturamento (Total)</td></tr>
       <tr><td><b>Faturamento em consultas</b></td><td>Oportunidade: <code>pipelineStageId</code>, <code>monetaryValue</code>, <code>createdAt</code></td><td>Etapa vira <code>estagio_id</code>. Valor vira <code>valor</code>.</td><td><code>oportunidades.estagio_id</code>, <code>.valor</code>, <code>.valor_tratamento</code>, <code>.criado_em</code></td><td><b>Somar</b> o valor (menos o valor do tratamento) das oportunidades criadas no período e hoje nas etapas Consulta Agendada ou Pós consulta</td><td>Cartões Faturamento (Em consultas, Total)</td></tr>
       <tr><td><b>Faturamento em tratamentos</b></td><td>Oportunidade: campo personalizado <code>Valor do tratamento</code>, <code>createdAt</code></td><td>Número do campo vira <code>valor_tratamento</code> (vazio = nulo).</td><td><code>oportunidades.valor_tratamento</code>, <code>.criado_em</code></td><td><b>Somar</b> o valor do tratamento das oportunidades criadas no período</td><td>Cartões Faturamento (Em tratamentos, Total)</td></tr>
-      <tr><td><b>Consultas novas / Tratamentos novos</b></td><td>Os mesmos da linha acima</td><td>Mesma regra de tipo.</td><td><code>oportunidades.tipo</code></td><td><b>Contar</b> as vendas de cada tipo</td><td>Cartões em Números de vendas</td></tr>
+      <tr><td><b>Consultas novas / Tratamentos novos</b></td><td>Oportunidade: <code>pipelineStageId</code>, <code>status</code>, <code>createdAt</code></td><td>Etapa vira <code>estagio_id</code>. "won" vira ganha.</td><td><code>oportunidades.estagio_id</code>, <code>.status</code>, <code>.criado_em</code></td><td><b>Contar</b> as criadas no período nas etapas Consulta Agendada ou Pós consulta (consultas novas) e, dessas, as ganhas (tratamentos novos)</td><td>Cartões em Números de vendas</td></tr>
       <tr><td><b>Meta</b></td><td>Não vem do GHL. É digitada na página de Metas.</td><td>Valor por métrica, mês e pessoa.</td><td><code>metas.valor</code>, <code>.mes_referencia</code>, <code>.usuario_id</code></td><td><b>Somar</b> metas dos meses tocados, proporcional aos dias</td><td>"Meta:", funil IDEAL / METAS</td></tr>
       <tr><td><b>% da meta e status</b></td><td>Resultado do realizado e da meta acima</td><td>Não há.</td><td>Não é guardado</td><td><b>Dividir</b> realizado por meta e classificar</td><td>Barra, "% da meta", selo, bolinha do funil</td></tr>
       <tr><td><b>Taxas</b></td><td>As contagens acima</td><td>Não há.</td><td>Não é guardado</td><td><b>Dividir</b> duas contagens</td><td>Cartões de taxa e balões do funil</td></tr>
@@ -985,23 +987,27 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
 
   <h4>Vendas, consultas novas e tratamentos novos</h4>
   <div class="trail">
-    <div class="tstep t1"><div class="th">1 · GHL</div><div class="tb"><p><b>Oportunidades</b></p><p><code>status</code>, <code>createdAt</code>, <code>pipelineId</code>, <code>assignedTo</code>.</p><p><b>Contato:</b> <code>data_inicio_tratamento</code>.</p></div></div>
-    <div class="tstep t2"><div class="th">2 · Tradução</div><div class="tb"><p>"won" vira ganha.</p><p><code>createdAt</code> vira <code>criado_em</code>.</p><p>Contato com data de início de tratamento: tipo <b>tratamento</b>; senão, <b>consulta</b>.</p></div></div>
-    <div class="tstep t3"><div class="th">3 · Banco</div><div class="tb"><p>Tabela <code>oportunidades</code></p><p><code>status</code>, <code>criado_em</code>, <code>tipo</code>, <code>pipeline_nome</code>, <code>responsavel_id</code></p></div></div>
-    <div class="tstep t4"><div class="th">4 · Cálculo</div><div class="tb"><p>Pegar as vendas do período e, sobre elas: contar (vendas) e separar por tipo (consultas novas e tratamentos novos).</p></div></div>
+    <div class="tstep t1"><div class="th">1 · GHL</div><div class="tb"><p><b>Oportunidades</b></p><p><code>status</code>, <code>createdAt</code>, <code>pipelineId</code>, <code>pipelineStageId</code> (etapa), <code>assignedTo</code>.</p></div></div>
+    <div class="tstep t2"><div class="th">2 · Tradução</div><div class="tb"><p>"won" vira ganha.</p><p><code>createdAt</code> vira <code>criado_em</code>; a etapa vira <code>estagio_id</code>.</p></div></div>
+    <div class="tstep t3"><div class="th">3 · Banco</div><div class="tb"><p>Tabela <code>oportunidades</code></p><p><code>status</code>, <code>criado_em</code>, <code>estagio_id</code>, <code>pipeline_nome</code>, <code>responsavel_id</code></p></div></div>
+    <div class="tstep t4"><div class="th">4 · Cálculo</div><div class="tb"><p>Vendas: contar as ganhas criadas no período.</p><p>Consultas novas: contar as criadas no período nas etapas de consulta.</p><p>Tratamentos novos: dessas, contar as ganhas.</p></div></div>
     <div class="tstep t5"><div class="th">5 · Tela</div><div class="tb"><p>Cartão Vendas, Consultas novas, Tratamentos novos e etapa "Vendas" do funil.</p></div></div>
   </div>
-<pre class="sql"><span class="c">-- Conjunto base: as vendas do período (oportunidades ganhas CRIADAS no período)</span>
-<span class="k">SELECT</span> tipo <span class="k">FROM</span> oportunidades
-<span class="k">WHERE</span> status = <span class="k">'ganha'</span>
-  <span class="k">AND</span> pipeline_nome = <span class="k">'Qualificação ( IA )'</span>
+<pre class="sql"><span class="c">-- Vendas</span>
+<span class="k">SELECT COUNT(*) FROM</span> oportunidades
+<span class="k">WHERE</span> status = <span class="k">'ganha'</span> <span class="k">AND</span> pipeline_nome = <span class="k">'Qualificação ( IA )'</span>
   <span class="k">AND</span> criado_em &gt;= :inicio <span class="k">AND</span> criado_em &lt; :fim
   <span class="c">[AND responsavel_id = :vendedor]</span>
 
-<span class="c">-- Sobre esse conjunto:</span>
-<span class="c">-- Vendas              = quantidade de linhas</span>
-<span class="c">-- Consultas novas     = linhas onde tipo &lt;&gt; 'tratamento'</span>
-<span class="c">-- Tratamentos novos   = linhas onde tipo =  'tratamento'</span></pre>
+<span class="c">-- Conjunto base de consultas: criadas no período, nas etapas de consulta</span>
+<span class="k">SELECT</span> status <span class="k">FROM</span> oportunidades
+<span class="k">WHERE</span> pipeline_nome = <span class="k">'Qualificação ( IA )'</span>
+  <span class="k">AND</span> estagio_id <span class="k">IN</span> (:consulta_agendada, :pos_consulta)
+  <span class="k">AND</span> criado_em &gt;= :inicio <span class="k">AND</span> criado_em &lt; :fim
+  <span class="c">[AND responsavel_id = :vendedor]</span>
+
+<span class="c">-- Consultas novas     = quantidade de linhas</span>
+<span class="c">-- Tratamentos novos   = linhas onde status = 'ganha'</span></pre>
 
   <h4>Faturamento em consultas, em tratamentos e total</h4>
   <div class="trail">
@@ -1037,7 +1043,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
       <tr><td>Marcada como ganha em 07/10/2026</td><td>(não é usada na contagem)</td><td>Não muda o mês da venda. Em outubro, Vendas = 0.</td></tr>
       <tr><td><code>monetaryValue</code>: 5350</td><td><code>valor = 5350,00</code></td><td>É o valor da oportunidade. Entra no <b>Faturamento em consultas</b> só se a oportunidade estiver nas etapas Consulta Agendada ou Pós consulta; ser uma venda ganha não basta.</td></tr>
       <tr><td>Pipeline: Qualificação (IA)</td><td><code>pipeline_nome = Qualificação ( IA )</code></td><td>É o pipeline do funil, então entra na contagem.</td></tr>
-      <tr><td>Contato sem <code>data_inicio_tratamento</code></td><td><code>tipo = consulta</code></td><td>Entra em <b>Consultas novas</b>, de agosto. O faturamento não usa esse tipo.</td></tr>
+      <tr><td>Etapa da oportunidade: Pós consulta</td><td><code>estagio_id</code> = etapa de consulta</td><td>Entra em <b>Consultas novas</b> e, por estar ganha, em <b>Tratamentos novos</b> (os dois de agosto). O valor entra no faturamento em consultas, descontado o valor do tratamento.</td></tr>
       <tr><td>Responsável: vazio</td><td><code>responsavel_id = vendedor padrão</code> (atribuído por padrão)</td><td>Conta para a Gabriela quando ela é selecionada.</td></tr>
     </tbody>
   </table></div>
@@ -1103,7 +1109,6 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
     <tbody>
       <tr><td>"Ainda não há dados..."</td><td>O banco não tem nenhum contato (a primeira atualização ainda não foi feita).</td><td>Topo</td></tr>
       <tr><td>"A última atualização falhou..."</td><td>A atualização mais recente terminou com erro.</td><td>Topo</td></tr>
-      <tr><td>"Sem data de início de tratamento no GHL..."</td><td>No período da área há vendas e nenhum tratamento novo.</td><td>Números de vendas</td></tr>
       <tr><td>"Faturamento em consultas soma o valor das oportunidades nas etapas Consulta Agendada e Pós consulta..."</td><td>Nenhuma oportunidade criada no período está nessas etapas.</td><td>Faturamento</td></tr>
       <tr><td>"Faturamento em tratamentos soma o campo Valor do tratamento..."</td><td>Nenhuma oportunidade criada no período tem o campo preenchido.</td><td>Faturamento</td></tr>
       <tr><td>"Faturamento em tratamentos indisponível..."</td><td>O banco ainda não tem a coluna do valor do tratamento (migration por rodar).</td><td>Faturamento</td></tr>
@@ -1249,7 +1254,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
   <div class="tw"><table>
     <thead><tr><th>#</th><th>Situação</th><th>Efeito na tela</th><th>Como resolver</th><th>Quem</th></tr></thead>
     <tbody>
-      <tr><td>1</td><td><b>"Data de início de tratamento" vazia.</b> Nenhum dos 30 contatos com venda ganha a tem.</td><td>Toda venda aparece como consulta nos cartões Consultas novas e Tratamentos novos (tratamentos novos fica em zero). Aviso amarelo na tela. O faturamento em tratamentos não depende dele.</td><td>Preencher o campo no contato quando o paciente iniciar o tratamento.</td><td>Equipe comercial</td></tr>
+      <tr><td>1</td><td><b>"Data de início de tratamento" vazia.</b> Nenhum dos 30 contatos com venda ganha a tem.</td><td>Sem efeito nos números atuais: desde 23/10/2026 o painel não usa mais esse campo (consultas novas e tratamentos novos vêm das etapas do pipeline).</td><td>Nada a fazer para o painel. O campo só importa se a clínica quiser usá-lo no GHL.</td><td>Equipe comercial</td></tr>
       <tr><td>2</td><td><b>Status "compareceu" nunca é marcado</b> no calendário. Só aparecem "confirmed" e "noshow".</td><td>Comparecimentos = 0. Taxas de comparecimento e de conversão ficam sem base. Aviso amarelo. (O faturamento em consultas não depende mais disso: usa as etapas da oportunidade.)</td><td>Marcar o status do evento após a consulta (ou adotar outro critério, ver capítulo 19).</td><td>Equipe comercial</td></tr>
       <tr><td>3</td><td><b>Agenda pouco usada.</b> 22 eventos no histórico contra 31 vendas ganhas. Em setembro, 14 vendas e 1 agendamento.</td><td>Consultas agendadas subestimado. Taxa de agendamento baixa e pouco confiável.</td><td>Registrar as consultas no calendário do GHL.</td><td>Equipe comercial</td></tr>
       <tr><td>3b</td><td><b>Campo "Valor do tratamento" quase vazio.</b> Preenchido em 2 das 1.282 oportunidades.</td><td>Faturamento em tratamentos fica em zero na maior parte dos meses. Aviso amarelo.</td><td>Preencher o campo na oportunidade quando o paciente fechar o tratamento.</td><td>Equipe comercial</td></tr>
@@ -1367,9 +1372,9 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
       <tr><td><b>Agendamento</b></td><td>Evento no calendário do GHL que representa uma consulta marcada.</td></tr>
       <tr><td><b>API</b></td><td>Forma de um sistema pedir dados a outro. O dashboard usa a API do GHL para ler os dados da clínica.</td></tr>
       <tr><td><b>Atribuição por padrão</b></td><td>Regra que conta, para o vendedor padrão, os registros sem responsável no GHL.</td></tr>
-      <tr><td><b>Campo personalizado</b></td><td>Campo criado pela clínica no GHL, além dos campos originais. O dashboard usa dois: TRAQ MQL e data de início de tratamento.</td></tr>
+      <tr><td><b>Campo personalizado</b></td><td>Campo criado pela clínica no GHL, além dos campos originais. O dashboard usa dois na oportunidade: TRAQ MQL e Valor do tratamento.</td></tr>
       <tr><td><b>Comparecimento</b></td><td>Consulta que aconteceu, com status "compareceu" no calendário.</td></tr>
-      <tr><td><b>Consulta nova</b></td><td>Venda de um contato que ainda não tem data de início de tratamento.</td></tr>
+      <tr><td><b>Consulta nova</b></td><td>Oportunidade criada no período que está nas etapas Consulta Agendada ou Pós consulta.</td></tr>
       <tr><td><b>Contato</b></td><td>Pessoa cadastrada no GHL.</td></tr>
       <tr><td><b>Denominador</b></td><td>O número pelo qual se divide em uma taxa. Se for zero, a taxa não é calculável.</td></tr>
       <tr><td><b>Funil de vendas</b></td><td>Sequência de etapas: leads, leads qualificados, consultas agendadas, comparecimentos e vendas.</td></tr>
@@ -1387,7 +1392,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
       <tr><td><b>Sincronização (sync)</b></td><td>O processo que lê o GHL e atualiza a cópia dos dados. É o que roda ao clicar em Atualizar dados.</td></tr>
       <tr><td><b>Taxa</b></td><td>Divisão entre dois números do funil, mostrada em porcentagem.</td></tr>
       <tr><td><b>Token</b></td><td>Chave secreta que autoriza a plataforma a ler os dados do GHL. Fica guardada só no servidor.</td></tr>
-      <tr><td><b>Tratamento novo</b></td><td>Venda de um contato que tem data de início de tratamento preenchida.</td></tr>
+      <tr><td><b>Tratamento novo</b></td><td>Consulta nova que está marcada como ganha: a consulta aconteceu e virou tratamento.</td></tr>
       <tr><td><b>Vendedor padrão</b></td><td>Pessoa a quem são atribuídos os registros sem responsável. Hoje, Gabriela.</td></tr>
     </tbody>
   </table></div>
@@ -1518,6 +1523,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
       <tr><td>19/10/2026</td><td>O painel de Metas virou um popup, em vez de uma página separada.</td><td>Menos trocas de página; o dashboard continua visível por trás.</td></tr>
       <tr><td>20/10/2026</td><td>As metas passaram a ter o formato do dashboard (cartões de faturamento e funil editável) e o cálculo do total do faturamento pela soma.</td><td>Evitar digitar metas que decorrem das taxas e manter o funil coerente.</td></tr>
       <tr><td>20/10/2026</td><td>A troca de tela ficou mais rápida: o login passou a ser conferido localmente em cada navegação (sem ida ao servidor de autenticação), a página de Metas busca vendedores e metas ao mesmo tempo, e as telas mostram um esqueleto de carregamento imediato.</td><td>As trocas de tela estavam lentas.</td></tr>
+      <tr><td>23/10/2026</td><td>Consultas novas e Tratamentos novos passaram a vir das etapas do pipeline Qualificação (IA): consultas novas = oportunidades criadas no período em Consulta Agendada ou Pós consulta; tratamentos novos = dessas, as ganhas. Deixou de valer a regra anterior (tipo da venda pela data de início de tratamento do contato).</td><td>Pedido do cliente: contar pelo estágio em que a oportunidade está no GHL.</td></tr>
       <tr><td>23/10/2026</td><td>Faturamento em consultas passou a vir das oportunidades nas etapas Consulta Agendada e Pós consulta (criadas no período), descontando o valor do tratamento quando há; antes vinha dos agendamentos "compareceu", que nenhum registro tinha.</td><td>Pedido do cliente: o valor das consultas está na oportunidade, por etapa, e não aparecia.</td></tr>
       <tr><td>23/10/2026</td><td>O faturamento deixou de ser a soma do valor das vendas ganhas. Em consultas: soma do valor da oportunidade dos contatos com agendamento "compareceu" criado no período. Em tratamentos: soma do campo "Valor do tratamento" das oportunidades criadas no período. Total: consultas mais tratamentos. O banco ganhou a coluna <code>valor_tratamento</code> (migration nova), preenchida pelo sync.</td><td>Pedido do cliente. Mantida a regra do "Criado em".</td></tr>
       <tr><td>22/10/2026</td><td>Os cinco cartões do bloco "Taxas de cada etapa do funil" passaram a ficar em uma única linha horizontal em telas largas (a partir de 1536 px de largura); em telas menores continuam em duas colunas e, no celular, em uma. Para caber, o cartão fica mais compacto quando estreito (anel menor ao lado do número).</td><td>Pedido do cliente: ver todas as taxas de uma vez, sem rolar.</td></tr>

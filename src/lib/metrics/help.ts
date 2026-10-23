@@ -12,7 +12,7 @@ export const METRIC_HELP: Record<MetricKey, string> = {
   vendas:
     'Oportunidades do pipeline Qualificação (IA) que foram criadas dentro do período (data "criado em" do GHL) e estão ganhas.',
   consultas_novas:
-    'Quantidade de vendas do período de contatos sem data de início de tratamento no GHL.',
+    'Oportunidades do pipeline Qualificação (IA) criadas no período que estão nas etapas Consulta Agendada e Pós consulta.',
   faturamento_consultas:
     'Soma do valor das oportunidades do pipeline Qualificação (IA) criadas dentro do período que estão nas etapas Consulta Agendada e Pós consulta. Quando há tratamento fechado, o valor do tratamento é descontado, para ele não contar duas vezes.',
   faturamento_tratamentos:
@@ -22,7 +22,7 @@ export const METRIC_HELP: Record<MetricKey, string> = {
 
 export const EXTRA_HELP = {
   tratamentosNovos:
-    'Quantidade de vendas do período de contatos com data de início de tratamento preenchida no GHL.',
+    'Oportunidades criadas no período que passaram pela etapa de consulta (Consulta Agendada ou Pós consulta) e estão marcadas como ganhas: consulta feita e convertida em tratamento.',
   metaFaturamento:
     'Quanto do faturamento total já foi feito em relação à meta cadastrada para o período.',
   qualificacao: 'Leads qualificados divididos pelos leads. Mostra quantos leads viram MQL.',

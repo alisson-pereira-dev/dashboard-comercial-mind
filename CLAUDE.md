@@ -149,7 +149,7 @@ Fluxo do sync: buscar no GHL, mapear, gravar por upsert no Supabase (chave = id 
 
 Se o denominador for zero, a taxa é "sem dados" (não 0%). Exibir "-" no lugar do número.
 
-**Números de vendas**: consultas novas, tratamentos novos, faturamento em consultas, faturamento em tratamentos, faturamento total.
+**Números de vendas**: vendas, consultas novas e tratamentos novos. Desde 23/10/2026 (`valorDasConsultas` em `queries.ts`, `contaGanhas` em `lib/metrics/faturamento.ts`): **consultas novas** = oportunidades do pipeline do funil com `criado_em` no período e `estagio_id` em `ETAPAS_CONSULTA_IDS` (Consulta Agendada e Pós consulta), qualquer status; **tratamentos novos** = dessas, as com status `ganha` (consulta feita e convertida em tratamento); **vendas** = todas as `ganha` do pipeline criadas no período. Os três não somam entre si. Usam a etapa atual da oportunidade. Conferido contra o GHL em out, set, ago e jul/2026.
 
 **Metas (Bloco 3)**
 
@@ -163,7 +163,7 @@ Se o denominador for zero, a taxa é "sem dados" (não 0%). Exibir "-" no lugar 
 
 - MQL: campo de oportunidade `TRAQ MQL` (checkbox, id `MVQhUw5Vxr7PVviLr39u`). Marcado vem como `fieldValueArray: ["MQL"]`. Lead qualificado = oportunidade com esse campo marcado. Hoje: 46 oportunidades marcadas.
 - Comparecimento: status do evento de calendário (`appointmentStatus`). Hoje a equipe não marca "compareceu"; só aparecem `confirmed` e `noshow`. Confirmar com o cliente o valor exato do status de comparecimento e treinar a equipe a marcá-lo, senão a taxa de comparecimento sai zerada.
-- Tipo de venda: contato com `data_inicio_tratamento` (campo de contato, id `gs5tLZ5CXwb1HjXFBsyy`) preenchida é venda de tratamento; sem ela, consulta.
+- Tipo de venda (**substituído em 23/10/2026**): antes, contato com `data_inicio_tratamento` (id `gs5tLZ5CXwb1HjXFBsyy`) preenchida era venda de tratamento. O painel não usa mais isso: consultas novas e tratamentos novos vêm das etapas do pipeline. A coluna `oportunidades.tipo` e o campo do contato ainda são sincronizados, mas não alimentam nenhum número.
 - Pessoas (16/10/2026): Eva Borges é a dona da clínica e só acompanha o dashboard. Gabriela Gonçalves é a vendedora. Os demais usuários do GHL são administradores da Mindsight e não são vendedores.
 - Dono da venda: o responsável (`assignedTo`) da oportunidade. Leads (que são oportunidades do pipeline do funil) usam o responsável da oportunidade e agendamentos o do evento.
 - Registro sem responsável no GHL conta para o vendedor padrão, que é o primeiro id de `GHL_VENDEDORES_IDS` (Gabriela). Motivo: o agente de IA só repassava a venda para ela e não será mais usado, e hoje 30 das 31 vendas ganhas não têm responsável. A atribuição é só no dashboard (`responsavel_padrao = true`); nada é escrito no GHL. Quando o cliente passar a atribuir responsáveis no GHL, o valor do GHL prevalece.
@@ -173,7 +173,7 @@ Se o denominador for zero, a taxa é "sem dados" (não 0%). Exibir "-" no lugar 
 
 **Lacunas de dados no GHL (bloqueiam números do Bloco 1)**
 
-- `data_inicio_tratamento` está vazia em todos os 30 contatos com venda ganha. Enquanto não for preenchida, toda venda cairia como consulta e o faturamento em tratamentos seria zero. Existem os campos de oportunidade `Valor do tratamento` e `O paciente fechou o tratamento?`, usados em poucas oportunidades.
+- `data_inicio_tratamento` está vazia nos contatos com venda ganha, mas deixou de importar para o painel (ver Tipo de venda acima). Existem os campos de oportunidade `Valor do tratamento` (usado no faturamento em tratamentos) e `O paciente fechou o tratamento?`, usados em poucas oportunidades.
 - Status de comparecimento no calendário, como descrito acima.
 - Campo `Valor do tratamento` na oportunidade (monetário): preenchido em 2 oportunidades. Sem ele, o faturamento em tratamentos fica em zero.
 - A coluna `oportunidades.valor_tratamento` vem da migration `20261023000001_valor_tratamento.sql`. Enquanto não for rodada, o sync segue sem gravar o campo e o dashboard mostra o faturamento em tratamentos como indisponível. Depois de rodar a migration, clicar em Atualizar dados.

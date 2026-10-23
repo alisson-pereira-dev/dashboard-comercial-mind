@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { somaConsultas, valorDeConsulta } from './faturamento'
+import { contaGanhas, somaConsultas, valorDeConsulta } from './faturamento'
 
 describe('valorDeConsulta', () => {
   it('sem tratamento, é o valor da oportunidade', () => {
@@ -32,5 +32,21 @@ describe('somaConsultas', () => {
   })
   it('lista vazia soma zero', () => {
     expect(somaConsultas([])).toBe(0)
+  })
+})
+
+describe('contaGanhas', () => {
+  it('conta só as oportunidades ganhas (tratamentos novos)', () => {
+    const ops = [
+      { valor: 160, status: 'aberta' },
+      { valor: 5670, status: 'ganha' },
+      { valor: 100, status: 'perdida' },
+      { valor: 800, status: 'ganha' },
+    ]
+    expect(contaGanhas(ops)).toBe(2)
+  })
+  it('sem status ou lista vazia, zero', () => {
+    expect(contaGanhas([{ valor: 1 }])).toBe(0)
+    expect(contaGanhas([])).toBe(0)
   })
 })
