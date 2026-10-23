@@ -22,13 +22,6 @@ export type DashboardData = {
   temDados: boolean
   /** Registros do período que estavam sem responsável no GHL e foram atribuídos ao vendedor padrão. */
   atribuicaoPadrao: { leads: number; vendas: number }
-  /** Contexto do faturamento, para a tela explicar um valor zerado. */
-  faturamento: {
-    /** false quando o banco ainda não tem a coluna valor_tratamento (migration por rodar). */
-    tratamentoDisponivel: boolean
-    /** Oportunidades criadas no período com o campo Valor do tratamento preenchido. */
-    oportunidadesComValorTratamento: number
-  }
 }
 
 async function count(
@@ -89,12 +82,11 @@ type Resumo = {
   consultas_agendadas: number
   comparecimentos: number
   vendas: number
+  vendas_valor: number | string
   vendas_padrao: number
   leads_padrao: number
   consultas_n: number
   consultas_ganhas: number
-  tratamento_n: number
-  tratamento_valor: number | string
   tem_dados: boolean
   metas: MetaRow[]
   ultimo_sync: { status: 'rodando' | 'ok' | 'erro'; iniciado_em: string; finalizado_em: string | null; erro: string | null } | null
@@ -121,10 +113,11 @@ export async function getDashboardData(
       p_etapas: ETAPAS_CONSULTA_IDS,
       p_meses: period.metaPesos.map((p) => p.mes),
     })
-    if (!error && data) {
+    // Versão antiga da função (migration 000002, sem vendas_valor): usa o caminho antigo.
+    if (!error && data && 'vendas_valor' in (data as object)) {
       const r = data as Resumo
       const consultasValor = faturamentoConsultas(r.consultas_agendadas, r.comparecimentos, VALOR_CONSULTA)
-      const tratamentoValor = Number(r.tratamento_valor)
+      const tratamentoValor = Number(r.vendas_valor)
       const s = r.ultimo_sync
       return {
         realizado: {
@@ -146,10 +139,6 @@ export async function getDashboardData(
         ultimoSyncOk: r.ultimo_sync_ok,
         temDados: r.tem_dados,
         atribuicaoPadrao: { leads: r.leads_padrao, vendas: r.vendas_padrao },
-        faturamento: {
-          tratamentoDisponivel: true,
-          oportunidadesComValorTratamento: r.tratamento_n,
-        },
       }
     }
     // PGRST202 = função não encontrada: migration ainda não rodada.
@@ -198,7 +187,6 @@ async function getDashboardDataLegacy(
     comparecimentos,
     vendasRes,
     consultasContagem,
-    tratamentoRes,
     metasRes,
     syncRes,
     okRes,
@@ -249,7 +237,7 @@ async function getDashboardDataLegacy(
       por(
         supabase
           .from('oportunidades')
-          .select('responsavel_padrao')
+          .select('valor, responsavel_padrao')
           .eq('status', 'ganha')
           .eq('pipeline_nome', PIPELINE_FUNIL)
           .gte('criado_em', fromIso)
@@ -257,18 +245,6 @@ async function getDashboardDataLegacy(
           .limit(5000),
       ),
       contagemConsultas(),
-      // Faturamento em tratamentos: campo Valor do tratamento das oportunidades criadas no período.
-      // Sem a coluna no banco (migration por rodar) a consulta falha e o valor fica indisponível.
-      por(
-        supabase
-          .from('oportunidades')
-          .select('valor_tratamento')
-          .eq('pipeline_nome', PIPELINE_FUNIL)
-          .not('valor_tratamento', 'is', null)
-          .gte('criado_em', fromIso)
-          .lt('criado_em', toIso)
-          .limit(5000),
-      ),
       supabase
         .from('metas')
         .select('metrica, valor, mes_referencia')
@@ -304,9 +280,8 @@ async function getDashboardDataLegacy(
   if (metasRes.error) throw new Error(metasRes.error.message)
 
   const vendas = vendasRes.data ?? []
-  const tratamentoDisponivel = !tratamentoRes.error
-  const comValorTratamento = tratamentoDisponivel ? (tratamentoRes.data ?? []) : []
-  const faturamentoTratamentos = comValorTratamento.reduce((acc, r) => acc + Number(r.valor_tratamento), 0)
+  // Em tratamentos: valor das oportunidades ganhas do período (as mesmas das vendas).
+  const faturamentoTratamentos = vendas.reduce((acc, v) => acc + Number(v.valor), 0)
 
   const faturamentoDeConsultas = faturamentoConsultas(agendadas, comparecimentos, VALOR_CONSULTA)
 
@@ -337,10 +312,6 @@ async function getDashboardDataLegacy(
     atribuicaoPadrao: {
       leads: leadsPadrao,
       vendas: vendas.filter((v) => v.responsavel_padrao).length,
-    },
-    faturamento: {
-      tratamentoDisponivel,
-      oportunidadesComValorTratamento: comValorTratamento.length,
     },
   }
 }

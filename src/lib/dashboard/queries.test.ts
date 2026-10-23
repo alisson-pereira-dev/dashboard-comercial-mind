@@ -9,12 +9,11 @@ const RESUMO = {
   consultas_agendadas: 2,
   comparecimentos: 0,
   vendas: 0,
+  vendas_valor: 0,
   vendas_padrao: 0,
   leads_padrao: 0,
   consultas_n: 9,
   consultas_ganhas: 0,
-  tratamento_n: 0,
-  tratamento_valor: 0,
   tem_dados: true,
   metas: [
     { metrica: 'leads', valor: 130.0, mes_referencia: '2026-10-01' },
@@ -83,23 +82,20 @@ describe('getDashboardData com a função dashboard_resumo', () => {
       finalizadoEm: '2026-10-23T17:01:07.215+00:00',
       erro: null,
     })
-    expect(d.faturamento).toEqual({
-      tratamentoDisponivel: true,
-      oportunidadesComValorTratamento: 0,
-    })
   })
 
-  it('consulta comparecida vale R$ 320 no lugar de R$ 160, e o total soma os tratamentos', async () => {
+  it('consulta comparecida vale R$ 320 no lugar de R$ 160; tratamentos vêm das ganhas; o total soma os dois', async () => {
     const rpc = vi.fn().mockResolvedValue({
-      data: { ...RESUMO, consultas_agendadas: 10, comparecimentos: 4, tratamento_valor: 5350, tratamento_n: 1 },
+      data: { ...RESUMO, consultas_agendadas: 10, comparecimentos: 4, vendas: 3, vendas_valor: 17010 },
       error: null,
     })
     const getDashboardData = await carregar()
     const d = await getDashboardData({ rpc } as unknown as SupabaseClient, periodo, null)
     // 6 agendadas x 160 + 4 comparecidas x 320
     expect(d.realizado.faturamento_consultas).toBe(2240)
-    expect(d.realizado.faturamento_tratamentos).toBe(5350)
-    expect(d.realizado.faturamento_total).toBe(2240 + 5350)
+    // Em tratamentos: valor das oportunidades ganhas (3 x R$ 5.670)
+    expect(d.realizado.faturamento_tratamentos).toBe(17010)
+    expect(d.realizado.faturamento_total).toBe(2240 + 17010)
   })
 
   it('repassa o vendedor escolhido para a função', async () => {
@@ -127,6 +123,21 @@ describe('getDashboardData com a função dashboard_resumo', () => {
     const esperado = Math.round((100 * (pesos.get('2026-09-01') ?? 0) + 300 * (pesos.get('2026-10-01') ?? 0)) * 100) / 100
     expect(d.metas.leads).toBe(esperado)
     expect(d.metas.leads).toBeGreaterThan(0)
+  })
+})
+
+describe('getDashboardData com a função desatualizada', () => {
+  it('versão antiga da função (sem vendas_valor) usa o caminho antigo, em vez de mostrar tratamentos zerado', async () => {
+    const { vendas_valor: _removido, ...antiga } = RESUMO
+    void _removido
+    const rpc = vi.fn().mockResolvedValue({ data: antiga, error: null })
+    const from = vi.fn(() => {
+      throw new Error('caminho-antigo-chamado')
+    })
+    const getDashboardData = await carregar()
+    await expect(getDashboardData({ rpc, from } as unknown as SupabaseClient, periodo, null)).rejects.toThrow(
+      'caminho-antigo-chamado',
+    )
   })
 })
 

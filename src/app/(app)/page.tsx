@@ -166,20 +166,15 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
   // Bloco A (período meta_*): faturamento e funis
   const a = dataMeta.realizado
   // Quando o faturamento está zerado por falta de dado no GHL, a tela diz o motivo.
-  const fat = dataMeta.faturamento
   const avisosFaturamento: string[] = []
   if (temDados && a.consultas_agendadas === 0) {
     avisosFaturamento.push(
       `Faturamento em consultas vale ${formatMoney(VALOR_CONSULTA.agendada)} por consulta agendada no calendário do GHL e ${formatMoney(VALOR_CONSULTA.comparecida)} por consulta comparecida. Nenhuma consulta foi agendada neste período.`,
     )
   }
-  if (!fat.tratamentoDisponivel) {
+  if (temDados && a.vendas === 0) {
     avisosFaturamento.push(
-      'Faturamento em tratamentos indisponível: o banco ainda não tem o campo Valor do tratamento (rodar a migration valor_tratamento e clicar em Atualizar dados).',
-    )
-  } else if (temDados && fat.oportunidadesComValorTratamento === 0) {
-    avisosFaturamento.push(
-      'Faturamento em tratamentos soma o campo Valor do tratamento das oportunidades. Nenhuma oportunidade criada neste período tem esse campo preenchido no GHL.',
+      'Faturamento em tratamentos soma o valor das oportunidades marcadas como ganhas. Nenhuma oportunidade criada neste período foi ganha.',
     )
   }
   const metasA = dataMeta.metas
