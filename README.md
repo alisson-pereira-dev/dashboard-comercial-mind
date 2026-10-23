@@ -32,6 +32,7 @@ Variáveis de ambiente do serviço (sem espaços no início ou no fim dos valore
 | `GHL_LOCATION_ID` | Id da sub-conta (location) |
 | `GHL_VENDEDORES_IDS` | Ids de usuário do GHL, separados por vírgula. O primeiro é o padrão |
 | `GHL_PIPELINE_FUNIL` | Opcional. Nome exato do pipeline do funil. Padrão: `Qualificação ( IA )` |
+| `GHL_ETAPAS_CONSULTA_IDS` | Opcional. Ids das etapas do pipeline que contam como consulta (faturamento em consultas), separados por vírgula. Padrão: Consulta Agendada e Pós consulta da clínica piloto |
 
 O `.dockerignore` mantém qualquer `.env` fora da imagem.
 

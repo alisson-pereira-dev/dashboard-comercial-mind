@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { PIPELINE_FUNIL } from '@/lib/ghl/config'
+import { ETAPAS_CONSULTA_IDS, PIPELINE_FUNIL } from '@/lib/ghl/config'
+import { somaConsultas, type OportunidadeConsulta } from '@/lib/metrics/faturamento'
 import { METRIC_KEYS, type MetricKey, type Period } from '@/lib/metrics'
 
 export type Realizado = Record<MetricKey, number> & {
@@ -27,6 +28,8 @@ export type DashboardData = {
     tratamentoDisponivel: boolean
     /** Oportunidades criadas no período com o campo Valor do tratamento preenchido. */
     oportunidadesComValorTratamento: number
+    /** Oportunidades criadas no período que estão nas etapas de consulta do pipeline. */
+    oportunidadesEmConsulta: number
   }
 }
 
@@ -79,32 +82,27 @@ export async function getDashboardData(
   const por = <T,>(q: T): T =>
     vendedorId ? (q as unknown as { eq(c: string, v: string): T }).eq('responsavel_id', vendedorId) : q
 
-  // Faturamento em consultas: valor da oportunidade (pipeline do funil) de cada contato com
-  // agendamento 'compareceu' criado no período. Cada oportunidade conta uma vez.
-  const valorDasConsultas = async (): Promise<number> => {
-    // Sem filtro de vendedor aqui: quem recebe o valor é o responsável pela oportunidade.
-    const { data: ags, error } = await supabase
-      .from('agendamentos')
-      .select('contato_id')
-      .eq('status', 'compareceu')
-      .gte('criado_em', fromIso)
-      .lt('criado_em', toIso)
-      .limit(5000)
-    if (error) throw new Error(error.message)
-    const contatos = [...new Set((ags ?? []).map((a) => a.contato_id).filter((c): c is string => Boolean(c)))]
-    const valores = new Map<string, number>()
-    for (let i = 0; i < contatos.length; i += 100) {
-      const { data, error: e } = await por(
+  // Faturamento em consultas: valor das oportunidades criadas no período que estão nas etapas de
+  // consulta do pipeline do funil. O valor da oportunidade já inclui o tratamento quando ele foi
+  // fechado, então tiramos o Valor do tratamento para não contar o tratamento duas vezes.
+  const valorDasConsultas = async (): Promise<{ valor: number; oportunidades: number }> => {
+    const buscar = (colunas: string) =>
+      por(
         supabase
           .from('oportunidades')
-          .select('id, valor')
+          .select(colunas)
           .eq('pipeline_nome', PIPELINE_FUNIL)
-          .in('contato_id', contatos.slice(i, i + 100)),
+          .in('estagio_id', ETAPAS_CONSULTA_IDS)
+          .gte('criado_em', fromIso)
+          .lt('criado_em', toIso)
+          .limit(5000),
       )
-      if (e) throw new Error(e.message)
-      for (const o of data ?? []) valores.set(o.id, Number(o.valor))
-    }
-    return [...valores.values()].reduce((acc, v) => acc + v, 0)
+    let res = await buscar('valor, valor_tratamento')
+    // Banco ainda sem a coluna valor_tratamento (migration por rodar): segue só com o valor.
+    if (res.error) res = await buscar('valor')
+    if (res.error) throw new Error(res.error.message)
+    const linhas = (res.data ?? []) as unknown as OportunidadeConsulta[]
+    return { valor: somaConsultas(linhas), oportunidades: linhas.length }
   }
 
   const [
@@ -232,9 +230,9 @@ export async function getDashboardData(
     consultas_agendadas: agendadas,
     comparecimentos,
     vendas: vendas.length,
-    faturamento_consultas: consultasValor,
+    faturamento_consultas: consultasValor.valor,
     faturamento_tratamentos: faturamentoTratamentos,
-    faturamento_total: consultasValor + faturamentoTratamentos,
+    faturamento_total: consultasValor.valor + faturamentoTratamentos,
     consultas_novas: consultas.length,
     tratamentosNovos: tratamentos.length,
   }
@@ -264,6 +262,10 @@ export async function getDashboardData(
       leads: leadsPadrao,
       vendas: vendas.filter((v) => v.responsavel_padrao).length,
     },
-    faturamento: { tratamentoDisponivel, oportunidadesComValorTratamento: comValorTratamento.length },
+    faturamento: {
+      tratamentoDisponivel,
+      oportunidadesComValorTratamento: comValorTratamento.length,
+      oportunidadesEmConsulta: consultasValor.oportunidades,
+    },
   }
 }

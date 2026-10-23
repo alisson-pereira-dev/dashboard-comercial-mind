@@ -7,6 +7,18 @@ export const GHL_FIELD_VALOR_TRATAMENTO_ID =
 export const GHL_FIELD_INICIO_TRATAMENTO_ID =
   process.env.GHL_FIELD_INICIO_TRATAMENTO_ID ?? 'gs5tLZ5CXwb1HjXFBsyy'
 
+// Etapas do pipeline do funil em que a consulta já está marcada ou feita: "Consulta  Agendada" e
+// "Pós consulta" (ids da location piloto; o nome no GHL tem dois espaços). O faturamento em
+// consultas soma o valor das oportunidades nessas etapas. Sobrescreva por GHL_ETAPAS_CONSULTA_IDS
+// (ids separados por vírgula) ao subir outra clínica.
+export const ETAPAS_CONSULTA_IDS = (
+  process.env.GHL_ETAPAS_CONSULTA_IDS?.trim() ||
+  '68bce141-2351-477d-9b92-1fc3cf846650,aed1d454-d7e3-45d5-8d81-ead7f452c3b8'
+)
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean)
+
 // Pipeline em que o funil é medido (decisão de 22/10/2026): leads, leads qualificados e vendas são
 // oportunidades deste pipeline. Os demais (Clientes da base, Geladeira, Reativação) ficam de fora.
 // Mude por GHL_PIPELINE_FUNIL se o nome no GHL for outro nesta clínica.

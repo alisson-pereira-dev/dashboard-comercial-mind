@@ -171,9 +171,9 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
   // Quando o faturamento está zerado por falta de dado no GHL, a tela diz o motivo.
   const fat = dataMeta.faturamento
   const avisosFaturamento: string[] = []
-  if (temDados && a.comparecimentos === 0) {
+  if (temDados && fat.oportunidadesEmConsulta === 0) {
     avisosFaturamento.push(
-      'Faturamento em consultas soma o valor da oportunidade dos agendamentos marcados como "compareceu" no calendário do GHL. Nenhum agendamento está marcado assim neste período.',
+      'Faturamento em consultas soma o valor das oportunidades nas etapas Consulta Agendada e Pós consulta. Nenhuma oportunidade criada neste período está nessas etapas.',
     )
   }
   if (!fat.tratamentoDisponivel) {
