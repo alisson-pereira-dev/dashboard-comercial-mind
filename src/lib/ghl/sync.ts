@@ -30,6 +30,20 @@ async function upsert(admin: SupabaseClient, table: string, rows: unknown[]) {
   if (error) throw new Error(`Falha ao gravar ${table}: ${error.message}`)
 }
 
+// O banco pode estar sem a coluna valor_tratamento (migration ainda não rodada). Nesse caso o sync
+// segue sem ela, em vez de falhar inteiro, e o dashboard avisa que o faturamento em tratamentos
+// está indisponível.
+async function temColunaValorTratamento(admin: SupabaseClient) {
+  const { error } = await admin.from('oportunidades').select('valor_tratamento').limit(1)
+  return !error
+}
+
+function semValorTratamento(row: OportunidadeRow): Partial<OportunidadeRow> {
+  const copia: Partial<OportunidadeRow> = { ...row }
+  delete copia.valor_tratamento
+  return copia
+}
+
 // Sync completo e idempotente: rodar duas vezes não duplica registros.
 export async function runSync(admin: SupabaseClient): Promise<SyncCounts> {
   const { locationId } = ghlCredentials()
@@ -60,12 +74,17 @@ export async function runSync(admin: SupabaseClient): Promise<SyncCounts> {
 
   // Oportunidades
   const ctx = { pipelineNames, contatosComTratamento }
+  const gravaValorTratamento = await temColunaValorTratamento(admin)
   for await (const page of ghlPages<Raw>(
     `/opportunities/search?location_id=${locationId}&limit=100`,
     'opportunities',
   )) {
     const rows = page.map((o) => mapOpportunity(o, ctx)).filter((r): r is OportunidadeRow => r !== null)
-    await upsert(admin, 'oportunidades', rows)
+    await upsert(
+      admin,
+      'oportunidades',
+      gravaValorTratamento ? rows : rows.map(semValorTratamento),
+    )
     counts.oportunidades += rows.length
   }
 

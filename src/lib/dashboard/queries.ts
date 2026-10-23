@@ -21,6 +21,13 @@ export type DashboardData = {
   temDados: boolean
   /** Registros do período que estavam sem responsável no GHL e foram atribuídos ao vendedor padrão. */
   atribuicaoPadrao: { leads: number; vendas: number }
+  /** Contexto do faturamento, para a tela explicar um valor zerado. */
+  faturamento: {
+    /** false quando o banco ainda não tem a coluna valor_tratamento (migration por rodar). */
+    tratamentoDisponivel: boolean
+    /** Oportunidades criadas no período com o campo Valor do tratamento preenchido. */
+    oportunidadesComValorTratamento: number
+  }
 }
 
 async function count(
@@ -72,12 +79,42 @@ export async function getDashboardData(
   const por = <T,>(q: T): T =>
     vendedorId ? (q as unknown as { eq(c: string, v: string): T }).eq('responsavel_id', vendedorId) : q
 
+  // Faturamento em consultas: valor da oportunidade (pipeline do funil) de cada contato com
+  // agendamento 'compareceu' criado no período. Cada oportunidade conta uma vez.
+  const valorDasConsultas = async (): Promise<number> => {
+    // Sem filtro de vendedor aqui: quem recebe o valor é o responsável pela oportunidade.
+    const { data: ags, error } = await supabase
+      .from('agendamentos')
+      .select('contato_id')
+      .eq('status', 'compareceu')
+      .gte('criado_em', fromIso)
+      .lt('criado_em', toIso)
+      .limit(5000)
+    if (error) throw new Error(error.message)
+    const contatos = [...new Set((ags ?? []).map((a) => a.contato_id).filter((c): c is string => Boolean(c)))]
+    const valores = new Map<string, number>()
+    for (let i = 0; i < contatos.length; i += 100) {
+      const { data, error: e } = await por(
+        supabase
+          .from('oportunidades')
+          .select('id, valor')
+          .eq('pipeline_nome', PIPELINE_FUNIL)
+          .in('contato_id', contatos.slice(i, i + 100)),
+      )
+      if (e) throw new Error(e.message)
+      for (const o of data ?? []) valores.set(o.id, Number(o.valor))
+    }
+    return [...valores.values()].reduce((acc, v) => acc + v, 0)
+  }
+
   const [
     leads,
     qualificados,
     agendadas,
     comparecimentos,
     vendasRes,
+    consultasValor,
+    tratamentoRes,
     metasRes,
     syncRes,
     okRes,
@@ -135,6 +172,19 @@ export async function getDashboardData(
           .lt('criado_em', toIso)
           .limit(5000),
       ),
+      valorDasConsultas(),
+      // Faturamento em tratamentos: campo Valor do tratamento das oportunidades criadas no período.
+      // Sem a coluna no banco (migration por rodar) a consulta falha e o valor fica indisponível.
+      por(
+        supabase
+          .from('oportunidades')
+          .select('valor_tratamento')
+          .eq('pipeline_nome', PIPELINE_FUNIL)
+          .not('valor_tratamento', 'is', null)
+          .gte('criado_em', fromIso)
+          .lt('criado_em', toIso)
+          .limit(5000),
+      ),
       supabase
         .from('metas')
         .select('metrica, valor, mes_referencia')
@@ -172,8 +222,9 @@ export async function getDashboardData(
   const vendas = vendasRes.data ?? []
   const consultas = vendas.filter((v) => v.tipo !== 'tratamento')
   const tratamentos = vendas.filter((v) => v.tipo === 'tratamento')
-  const soma = (rows: { valor: number | string }[]) =>
-    rows.reduce((acc, r) => acc + Number(r.valor), 0)
+  const tratamentoDisponivel = !tratamentoRes.error
+  const comValorTratamento = tratamentoDisponivel ? (tratamentoRes.data ?? []) : []
+  const faturamentoTratamentos = comValorTratamento.reduce((acc, r) => acc + Number(r.valor_tratamento), 0)
 
   const realizado: Realizado = {
     leads,
@@ -181,9 +232,9 @@ export async function getDashboardData(
     consultas_agendadas: agendadas,
     comparecimentos,
     vendas: vendas.length,
-    faturamento_consultas: soma(consultas),
-    faturamento_tratamentos: soma(tratamentos),
-    faturamento_total: soma(vendas),
+    faturamento_consultas: consultasValor,
+    faturamento_tratamentos: faturamentoTratamentos,
+    faturamento_total: consultasValor + faturamentoTratamentos,
     consultas_novas: consultas.length,
     tratamentosNovos: tratamentos.length,
   }
@@ -213,5 +264,6 @@ export async function getDashboardData(
       leads: leadsPadrao,
       vendas: vendas.filter((v) => v.responsavel_padrao).length,
     },
+    faturamento: { tratamentoDisponivel, oportunidadesComValorTratamento: comValorTratamento.length },
   }
 }

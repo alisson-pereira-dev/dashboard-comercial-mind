@@ -1,4 +1,9 @@
-import { GHL_FIELD_INICIO_TRATAMENTO_ID, GHL_FIELD_MQL_ID, VENDEDOR_PADRAO_ID } from './config'
+import {
+  GHL_FIELD_INICIO_TRATAMENTO_ID,
+  GHL_FIELD_MQL_ID,
+  GHL_FIELD_VALOR_TRATAMENTO_ID,
+  VENDEDOR_PADRAO_ID,
+} from './config'
 
 type Raw = Record<string, unknown>
 
@@ -21,6 +26,8 @@ export type OportunidadeRow = {
   estagio_id: string | null
   tipo: 'consulta' | 'tratamento'
   valor: number
+  /** Campo "Valor do tratamento" da oportunidade; null quando vazio. */
+  valor_tratamento: number | null
   status: 'aberta' | 'ganha' | 'perdida'
   mql: boolean
   criado_em: string
@@ -124,6 +131,16 @@ export function isMql(raw: Raw): boolean {
   return Boolean(f.fieldValueString ?? f.value)
 }
 
+// Valor do campo personalizado "Valor do tratamento". O GHL entrega número (fieldValueNumber), mas
+// aceitamos texto. Vazio, zero ou inválido viram null: não há valor de tratamento a contar.
+export function valorTratamento(raw: Raw): number | null {
+  const fields = Array.isArray(raw.customFields) ? (raw.customFields as Raw[]) : []
+  const f = fields.find((x) => x.id === GHL_FIELD_VALOR_TRATAMENTO_ID)
+  if (!f) return null
+  const n = Number(f.fieldValueNumber ?? f.fieldValueString ?? f.value)
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+
 export type OpportunityContext = {
   pipelineNames: Map<string, string>
   contatosComTratamento: Set<string>
@@ -144,6 +161,7 @@ export function mapOpportunity(raw: Raw, ctx: OpportunityContext): OportunidadeR
     estagio_id: str(raw.pipelineStageId),
     tipo: contatoId && ctx.contatosComTratamento.has(contatoId) ? 'tratamento' : 'consulta',
     valor: Number(raw.monetaryValue) || 0,
+    valor_tratamento: valorTratamento(raw),
     status,
     mql: isMql(raw),
     criado_em: criado,

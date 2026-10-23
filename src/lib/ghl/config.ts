@@ -1,6 +1,9 @@
 // Ids dos campos personalizados da location piloto. Mudam por clínica:
 // sobrescreva por variável de ambiente ao subir outra instância.
 export const GHL_FIELD_MQL_ID = process.env.GHL_FIELD_MQL_ID ?? 'MVQhUw5Vxr7PVviLr39u'
+// Campo de oportunidade "Valor do tratamento" (monetário): base do faturamento em tratamentos.
+export const GHL_FIELD_VALOR_TRATAMENTO_ID =
+  process.env.GHL_FIELD_VALOR_TRATAMENTO_ID?.trim() || 's9irWLPUo1HwtXBM7pni'
 export const GHL_FIELD_INICIO_TRATAMENTO_ID =
   process.env.GHL_FIELD_INICIO_TRATAMENTO_ID ?? 'gs5tLZ5CXwb1HjXFBsyy'
 

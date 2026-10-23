@@ -9,8 +9,9 @@ import {
   mapOpportunity,
   mapOpportunityStatus,
   parseGhlDate,
+  valorTratamento,
 } from './mappers'
-import { GHL_FIELD_INICIO_TRATAMENTO_ID, GHL_FIELD_MQL_ID } from './config'
+import { GHL_FIELD_INICIO_TRATAMENTO_ID, GHL_FIELD_MQL_ID, GHL_FIELD_VALOR_TRATAMENTO_ID } from './config'
 
 describe('parseGhlDate', () => {
   it('lê ISO, milissegundos e texto numérico', () => {
@@ -136,5 +137,54 @@ describe('mapUser', () => {
   it('usuário apagado fica inativo e sem nome é ignorado', () => {
     expect(mapUser({ id: 'u2', name: 'X', deleted: true }, [])?.ativo).toBe(false)
     expect(mapUser({ id: 'u3' }, [])).toBeNull()
+  })
+})
+
+const campo = (extra: Record<string, unknown>) => ({ customFields: [{ id: GHL_FIELD_VALOR_TRATAMENTO_ID, ...extra }] })
+
+describe('valorTratamento', () => {
+  it('lê o número que o GHL entrega', () => {
+    expect(valorTratamento(campo({ fieldValueNumber: 5350, type: 'number' }))).toBe(5350)
+  })
+  it('aceita o valor como texto', () => {
+    expect(valorTratamento(campo({ fieldValueString: '1200.5' }))).toBe(1200.5)
+  })
+  it('campo ausente, vazio, zero ou inválido vira null', () => {
+    expect(valorTratamento({})).toBeNull()
+    expect(valorTratamento({ customFields: [] })).toBeNull()
+    expect(valorTratamento(campo({}))).toBeNull()
+    expect(valorTratamento(campo({ fieldValueNumber: 0 }))).toBeNull()
+    expect(valorTratamento(campo({ fieldValueString: 'abc' }))).toBeNull()
+    expect(valorTratamento(campo({ fieldValueNumber: -10 }))).toBeNull()
+  })
+  it('ignora outros campos personalizados', () => {
+    expect(valorTratamento({ customFields: [{ id: 'outro', fieldValueNumber: 99 }] })).toBeNull()
+  })
+})
+
+describe('mapOpportunity: valor da oportunidade e valor do tratamento são campos distintos', () => {
+  it('guarda os dois sem misturar', () => {
+    const row = mapOpportunity(
+      {
+        id: 'o1',
+        createdAt: '2026-09-01T12:00:00Z',
+        status: 'won',
+        monetaryValue: 5670,
+        contactId: 'c1',
+        pipelineId: 'p1',
+        ...campo({ fieldValueNumber: 5350 }),
+      },
+      { pipelineNames: new Map([['p1', 'Qualificação ( IA )']]), contatosComTratamento: new Set() },
+    )
+    expect(row?.valor).toBe(5670)
+    expect(row?.valor_tratamento).toBe(5350)
+  })
+  it('sem o campo, valor_tratamento é null e o valor da oportunidade segue', () => {
+    const row = mapOpportunity(
+      { id: 'o2', createdAt: '2026-09-01T12:00:00Z', status: 'open', monetaryValue: 300, pipelineId: 'p1' },
+      { pipelineNames: new Map(), contatosComTratamento: new Set() },
+    )
+    expect(row?.valor).toBe(300)
+    expect(row?.valor_tratamento).toBeNull()
   })
 })

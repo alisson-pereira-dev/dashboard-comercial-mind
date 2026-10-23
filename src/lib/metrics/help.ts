@@ -14,10 +14,10 @@ export const METRIC_HELP: Record<MetricKey, string> = {
   consultas_novas:
     'Quantidade de vendas do período de contatos sem data de início de tratamento no GHL.',
   faturamento_consultas:
-    'Soma do valor das vendas do período que são consulta, ou seja, de contatos sem data de início de tratamento.',
+    'Soma do valor da oportunidade dos agendamentos marcados como "compareceu" no calendário do GHL, criados dentro do período (pipeline Qualificação (IA)). Só conta depois que a equipe marca o comparecimento.',
   faturamento_tratamentos:
-    'Soma do valor das vendas do período que são tratamento, ou seja, de contatos com data de início de tratamento preenchida.',
-  faturamento_total: 'Soma do valor de todas as vendas ganhas criadas no período.',
+    'Soma do campo "Valor do tratamento" das oportunidades do pipeline Qualificação (IA) criadas dentro do período. É um campo próprio, diferente do valor da oportunidade.',
+  faturamento_total: 'Faturamento em consultas mais faturamento em tratamentos.',
 }
 
 export const EXTRA_HELP = {

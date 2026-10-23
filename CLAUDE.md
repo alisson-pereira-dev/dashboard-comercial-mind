@@ -132,7 +132,8 @@ Fluxo do sync: buscar no GHL, mapear, gravar por upsert no Supabase (chave = id 
 - Leads qualificados: oportunidades do pipeline do funil com `mql` e `criado_em` no período.
 - Consultas agendadas: agendamentos não cancelados com `criado_em` no período.
 - Comparecimentos: agendamentos com status `compareceu` e `criado_em` no período.
-- Vendas e faturamento: oportunidades `ganha` do pipeline do funil com `criado_em` no período. `valor` é o `monetaryValue`.
+- Vendas: oportunidades `ganha` do pipeline do funil com `criado_em` no período. `valor` é o `monetaryValue`.
+- Faturamento (decisão de 23/10/2026, **não é a soma das vendas**): **em consultas** = soma do `valor` (monetaryValue) das oportunidades do pipeline do funil dos contatos que têm agendamento `compareceu` com `criado_em` no período, cada oportunidade uma vez (filtro de vendedor pelo responsável da oportunidade); **em tratamentos** = soma de `oportunidades.valor_tratamento` (campo personalizado `Valor do tratamento`, id `s9irWLPUo1HwtXBM7pni`, sobrescrevível por `GHL_FIELD_VALOR_TRATAMENTO_ID`) das oportunidades do pipeline do funil com `criado_em` no período; **total** = consultas + tratamentos. Hoje isso dá zero: nenhum agendamento está `compareceu` e o campo está preenchido em 2 de 1.282 oportunidades. A tela avisa o motivo (`avisosFaturamento` em `(app)/page.tsx`).
 - Regra do período (decisão de 21/10/2026): **todos** os números do funil usam a data "Criado em" do próprio registro no GHL (contato, oportunidade e agendamento). Consequência: uma venda ganha hoje de uma oportunidade criada em agosto conta em agosto, e o mês atual tende a subestimar vendas e faturamento. `fechado_em` e `data_inicio` continuam gravados, mas não entram nas contagens.
 - Período: fuso fixo de Brasília (-03:00). Mês atual por padrão, ou intervalo `de` e `ate`. Atalhos: mês atual, mês anterior, últimos 7 e últimos 30 dias.
 - Cada bloco tem o próprio filtro de período, com parâmetros próprios na URL: `meta_mes`, `meta_de`, `meta_ate` (Realizado vs. metas) e `vendas_mes`, `vendas_de`, `vendas_ate` (funil, meta de faturamento, taxas e números de vendas; o seletor fica no cartão Meta de faturamento). Componente: `src/components/period-filter.tsx`.
@@ -168,12 +169,14 @@ Se o denominador for zero, a taxa é "sem dados" (não 0%). Exibir "-" no lugar 
 - Registro sem responsável no GHL conta para o vendedor padrão, que é o primeiro id de `GHL_VENDEDORES_IDS` (Gabriela). Motivo: o agente de IA só repassava a venda para ela e não será mais usado, e hoje 30 das 31 vendas ganhas não têm responsável. A atribuição é só no dashboard (`responsavel_padrao = true`); nada é escrito no GHL. Quando o cliente passar a atribuir responsáveis no GHL, o valor do GHL prevalece.
 - Metas por vendedor: `metas.usuario_id`, com `'clinica'` para a meta geral. Vendedor selecionado usa só as metas dele; "Clínica toda" usa as gerais.
 - Pipeline do funil: só `Qualificação ( IA )` (ver regra de 22/10/2026 acima). Os outros (`Clientes da base`, `Geladeira ...`, `Reativação de leads`) ficam fora de leads, qualificados e vendas. Consultas agendadas e comparecimentos seguem contando agendamentos de qualquer contato.
-- Faturamento: `payments/transactions` retorna vazio nesta location. Usar `monetaryValue` das oportunidades ganhas, datadas pelo `criado_em` (regra de 21/10/2026; antes era `lastStatusChangeAt`).
+- Faturamento: `payments/transactions` retorna vazio nesta location. O faturamento usa o valor da oportunidade (consultas) e o campo Valor do tratamento (tratamentos), datados pelo `criado_em` (regras de 21 e 23/10/2026; antes era a soma das vendas ganhas por `lastStatusChangeAt`).
 
 **Lacunas de dados no GHL (bloqueiam números do Bloco 1)**
 
 - `data_inicio_tratamento` está vazia em todos os 30 contatos com venda ganha. Enquanto não for preenchida, toda venda cairia como consulta e o faturamento em tratamentos seria zero. Existem os campos de oportunidade `Valor do tratamento` e `O paciente fechou o tratamento?`, usados em poucas oportunidades.
-- Status de comparecimento no calendário, como descrito acima.
+- Status de comparecimento no calendário, como descrito acima. Agora também zera o faturamento em consultas.
+- Campo `Valor do tratamento` na oportunidade (monetário): preenchido em 2 oportunidades. Sem ele, o faturamento em tratamentos fica em zero.
+- A coluna `oportunidades.valor_tratamento` vem da migration `20261023000001_valor_tratamento.sql`. Enquanto não for rodada, o sync segue sem gravar o campo e o dashboard mostra o faturamento em tratamentos como indisponível. Depois de rodar a migration, clicar em Atualizar dados.
 - Atividade comercial (fase 2): o que conta (ligação, WhatsApp, e-mail, tarefa, nota).
 
 Não inventar valores para suprir essas lacunas: mostrar "sem dados" até o GHL estar preenchido.

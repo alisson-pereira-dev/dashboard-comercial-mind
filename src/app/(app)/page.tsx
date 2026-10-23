@@ -83,7 +83,7 @@ function SectionHeader({
 }
 
 const TRATAMENTO_AVISO =
-  'Sem data de início de tratamento no GHL, as vendas deste período estão contabilizadas em consultas.'
+  'Sem data de início de tratamento no GHL, as vendas deste período estão contabilizadas como consultas novas.'
 
 const plural = (n: number, um: string, varios: string) => `${formatInt(n)} ${n === 1 ? um : varios}`
 
@@ -168,6 +168,23 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
 
   // Bloco A (período meta_*): faturamento e funis
   const a = dataMeta.realizado
+  // Quando o faturamento está zerado por falta de dado no GHL, a tela diz o motivo.
+  const fat = dataMeta.faturamento
+  const avisosFaturamento: string[] = []
+  if (temDados && a.comparecimentos === 0) {
+    avisosFaturamento.push(
+      'Faturamento em consultas soma o valor da oportunidade dos agendamentos marcados como "compareceu" no calendário do GHL. Nenhum agendamento está marcado assim neste período.',
+    )
+  }
+  if (!fat.tratamentoDisponivel) {
+    avisosFaturamento.push(
+      'Faturamento em tratamentos indisponível: o banco ainda não tem o campo Valor do tratamento (rodar a migration valor_tratamento e clicar em Atualizar dados).',
+    )
+  } else if (temDados && fat.oportunidadesComValorTratamento === 0) {
+    avisosFaturamento.push(
+      'Faturamento em tratamentos soma o campo Valor do tratamento das oportunidades. Nenhuma oportunidade criada neste período tem esse campo preenchido no GHL.',
+    )
+  }
   const metasA = dataMeta.metas
   const ratesA = funnelRates({
     leads: a.leads,
@@ -288,9 +305,11 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
             ]}
           />
         </div>
-        {temDados && a.vendas > 0 && a.tratamentosNovos === 0 ? (
-          <div className="mt-4">
-            <Notice>{TRATAMENTO_AVISO}</Notice>
+        {avisosFaturamento.length > 0 ? (
+          <div className="mt-4 space-y-2">
+            {avisosFaturamento.map((t) => (
+              <Notice key={t}>{t}</Notice>
+            ))}
           </div>
         ) : null}
       </section>
