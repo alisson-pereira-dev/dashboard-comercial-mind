@@ -12,7 +12,7 @@ npm install
 npm run dev
 ```
 
-Antes do primeiro uso, rode as migrations de `supabase/migrations/` no projeto Supabase, em ordem.
+Antes do primeiro uso, rode as migrations de `supabase/migrations/` no projeto Supabase, em ordem. A migration `20261023000002_dashboard_resumo.sql` cria a função que busca todos os números do dashboard de uma vez; sem ela o app funciona, só que mais devagar (cerca de 13 consultas por carga).
 
 Verificações: `npm run typecheck`, `npm run lint`, `npm test`.
 

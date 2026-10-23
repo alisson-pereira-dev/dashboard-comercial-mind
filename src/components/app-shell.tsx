@@ -1,6 +1,7 @@
 import { LogOut } from 'lucide-react'
 import { signOut } from '@/app/login/actions'
 import { ClinicaNome } from './clinica-nome'
+import { NavegacaoProvider } from './navegacao'
 import { NavLinks } from './nav-links'
 
 function Brand() {
@@ -36,30 +37,32 @@ function SignOutButton() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen lg:flex lg:gap-6 lg:p-6">
-      {/* Menu lateral (telas grandes) */}
-      <aside className="card sticky top-6 hidden h-[calc(100vh-3rem)] w-64 shrink-0 flex-col p-4 lg:flex">
-        <div className="rounded-2xl border border-border p-3">
+    <NavegacaoProvider>
+      <div className="min-h-screen lg:flex lg:gap-6 lg:p-6">
+        {/* Menu lateral (telas grandes) */}
+        <aside className="card sticky top-6 hidden h-[calc(100vh-3rem)] w-64 shrink-0 flex-col p-4 lg:flex">
+          <div className="rounded-2xl border border-border p-3">
+            <Brand />
+          </div>
+          <div className="mt-6">
+            <NavLinks direction="vertical" />
+          </div>
+          <div className="mt-auto border-t border-border pt-3">
+            <SignOutButton />
+          </div>
+        </aside>
+
+        {/* Barra superior (telas pequenas) */}
+        <header className="card m-4 flex flex-wrap items-center justify-between gap-3 p-3 lg:hidden">
           <Brand />
-        </div>
-        <div className="mt-6">
-          <NavLinks direction="vertical" />
-        </div>
-        <div className="mt-auto border-t border-border pt-3">
-          <SignOutButton />
-        </div>
-      </aside>
+          <div className="flex items-center gap-1">
+            <NavLinks direction="horizontal" />
+            <SignOutButton />
+          </div>
+        </header>
 
-      {/* Barra superior (telas pequenas) */}
-      <header className="card m-4 flex flex-wrap items-center justify-between gap-3 p-3 lg:hidden">
-        <Brand />
-        <div className="flex items-center gap-1">
-          <NavLinks direction="horizontal" />
-          <SignOutButton />
-        </div>
-      </header>
-
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
+    </NavegacaoProvider>
   )
 }

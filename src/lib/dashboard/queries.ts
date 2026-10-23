@@ -70,8 +70,101 @@ export async function getMetasDoMes(
   return Object.fromEntries(METRIC_KEYS.map((k) => [k, porMetrica.get(k) ?? ''])) as Record<MetricKey, string>
 }
 
+type MetaRow = { metrica: string; valor: number | string; mes_referencia: string }
+
+// Meta do período = soma das metas dos meses tocados, cada uma pela fração de dias dentro do período.
+function somarMetas(period: Period, rows: MetaRow[]): Record<MetricKey, number | null> {
+  const metas = Object.fromEntries(METRIC_KEYS.map((k) => [k, null])) as Record<MetricKey, number | null>
+  const pesos = new Map(period.metaPesos.map((p) => [p.mes, p.fracao]))
+  for (const m of rows) {
+    const key = m.metrica as MetricKey
+    const parte = Number(m.valor) * (pesos.get(m.mes_referencia) ?? 0)
+    metas[key] = Math.round(((metas[key] ?? 0) + parte) * 100) / 100
+  }
+  return metas
+}
+
+// Resposta da função dashboard_resumo (supabase/migrations/20261023000002).
+type Resumo = {
+  leads: number
+  leads_qualificados: number
+  consultas_agendadas: number
+  comparecimentos: number
+  vendas: number
+  vendas_padrao: number
+  leads_padrao: number
+  consultas_n: number
+  consultas_ganhas: number
+  consultas_valor: number | string
+  tratamento_n: number
+  tratamento_valor: number | string
+  tem_dados: boolean
+  metas: MetaRow[]
+  ultimo_sync: { status: 'rodando' | 'ok' | 'erro'; iniciado_em: string; finalizado_em: string | null; erro: string | null } | null
+  ultimo_sync_ok: string | null
+}
+
+// Se a função não existe no banco, não vale tentar de novo a cada pedido: lembra por alguns minutos.
+let semFuncaoAte = 0
+const SEM_FUNCAO_MS = 5 * 60 * 1000
+
 // vendedorId = null mostra a clínica toda e usa as metas gerais (usuario_id = 'clinica').
+// Uma única ida ao banco (função dashboard_resumo); sem ela, cai no caminho antigo.
 export async function getDashboardData(
+  supabase: SupabaseClient,
+  period: Period,
+  vendedorId: string | null = null,
+): Promise<DashboardData> {
+  if (Date.now() >= semFuncaoAte) {
+    const { data, error } = await supabase.rpc('dashboard_resumo', {
+      p_inicio: period.fromIso,
+      p_fim: period.toIso,
+      p_vendedor: vendedorId,
+      p_pipeline: PIPELINE_FUNIL,
+      p_etapas: ETAPAS_CONSULTA_IDS,
+      p_meses: period.metaPesos.map((p) => p.mes),
+    })
+    if (!error && data) {
+      const r = data as Resumo
+      const consultasValor = Number(r.consultas_valor)
+      const tratamentoValor = Number(r.tratamento_valor)
+      const s = r.ultimo_sync
+      return {
+        realizado: {
+          leads: r.leads,
+          leads_qualificados: r.leads_qualificados,
+          consultas_agendadas: r.consultas_agendadas,
+          comparecimentos: r.comparecimentos,
+          vendas: r.vendas,
+          faturamento_consultas: consultasValor,
+          faturamento_tratamentos: tratamentoValor,
+          faturamento_total: consultasValor + tratamentoValor,
+          consultas_novas: r.consultas_n,
+          tratamentosNovos: r.consultas_ganhas,
+        },
+        metas: somarMetas(period, r.metas),
+        ultimoSync: s
+          ? { status: s.status, iniciadoEm: s.iniciado_em, finalizadoEm: s.finalizado_em, erro: s.erro }
+          : null,
+        ultimoSyncOk: r.ultimo_sync_ok,
+        temDados: r.tem_dados,
+        atribuicaoPadrao: { leads: r.leads_padrao, vendas: r.vendas_padrao },
+        faturamento: {
+          tratamentoDisponivel: true,
+          oportunidadesComValorTratamento: r.tratamento_n,
+          oportunidadesEmConsulta: r.consultas_n,
+        },
+      }
+    }
+    // PGRST202 = função não encontrada: migration ainda não rodada.
+    if (error?.code === 'PGRST202') semFuncaoAte = Date.now() + SEM_FUNCAO_MS
+  }
+  return getDashboardDataLegacy(supabase, period, vendedorId)
+}
+
+// Caminho antigo: cerca de 13 consultas separadas por período. Fica como reserva para quando a função
+// dashboard_resumo ainda não existe no banco (migration por rodar). Mesmas regras da função.
+async function getDashboardDataLegacy(
   supabase: SupabaseClient,
   period: Period,
   vendedorId: string | null = null,
@@ -237,17 +330,7 @@ export async function getDashboardData(
     tratamentosNovos: consultasValor.ganhas,
   }
 
-  const metas = Object.fromEntries(METRIC_KEYS.map((k) => [k, null])) as Record<
-    MetricKey,
-    number | null
-  >
-  // Meta do período = soma das metas dos meses tocados, cada uma pela fração de dias dentro do período.
-  const pesos = new Map(period.metaPesos.map((p) => [p.mes, p.fracao]))
-  for (const m of metasRes.data ?? []) {
-    const key = m.metrica as MetricKey
-    const parte = Number(m.valor) * (pesos.get(m.mes_referencia) ?? 0)
-    metas[key] = Math.round(((metas[key] ?? 0) + parte) * 100) / 100
-  }
+  const metas = somarMetas(period, metasRes.data ?? [])
 
   const s = syncRes.data?.[0]
   return {

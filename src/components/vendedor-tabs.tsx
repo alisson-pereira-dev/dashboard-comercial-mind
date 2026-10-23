@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { LoaderCircle } from 'lucide-react'
+import { useNavegar } from './navegacao'
 
 export type VendedorTab = { id: string | null; label: string; href: string }
 
@@ -16,8 +16,7 @@ export function VendedorTabs({
   selected: string | null
   note?: string
 }) {
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const { pending: isPending, navegar } = useNavegar()
   // A aba clicada já aparece como ativa enquanto a página carrega os números.
   const [clicked, setClicked] = useState<string | null | undefined>(undefined)
 
@@ -44,7 +43,7 @@ export function VendedorTabs({
                 e.preventDefault()
                 if (t.id === selected) return
                 setClicked(t.id)
-                startTransition(() => router.push(t.href, { scroll: false }))
+                navegar(t.href, { scroll: false })
               }}
               className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200 ${
                 active ? 'bg-navy text-white' : 'border border-border bg-card text-navy hover:border-brand'

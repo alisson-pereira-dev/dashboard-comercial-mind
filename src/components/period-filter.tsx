@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { CalendarDays, ChevronDown } from 'lucide-react'
 import { DayPicker, type DateRange } from 'react-day-picker'
 import { ptBR } from 'react-day-picker/locale'
@@ -9,6 +9,7 @@ import 'react-day-picker/style.css'
 import { brDate, monthLabel } from '@/lib/format'
 import { PRESETS, presetRange, type PresetId } from '@/lib/metrics/period'
 import { useDismiss } from '@/lib/use-dismiss'
+import { useNavegar } from './navegacao'
 
 type Preset = PresetId | 'personalizado'
 
@@ -43,7 +44,7 @@ type Props = {
 }
 
 export function PeriodFilter({ prefix, kind, de, ate, hoje }: Props) {
-  const router = useRouter()
+  const { navegar } = useNavegar()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -104,7 +105,7 @@ export function PeriodFilter({ prefix, kind, de, ate, hoje }: Props) {
       params.set(`${prefix}ate`, to)
     }
     setOpen(false)
-    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    navegar(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
   const ready = Boolean(range?.from && range.to)
