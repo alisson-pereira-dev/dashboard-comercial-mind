@@ -4,7 +4,7 @@ import { BarChart3, CalendarDays, CalendarPlus, FilePlus2, FileText, Filter, Use
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardData, getVendedores } from '@/lib/dashboard/queries'
 import type { DashboardData } from '@/lib/dashboard/queries'
-import { VENDEDOR_PADRAO_ID } from '@/lib/ghl/config'
+import { VALOR_CONSULTA, VENDEDOR_PADRAO_ID } from '@/lib/ghl/config'
 import { hrefWith } from '@/lib/url'
 import {
   EXTRA_HELP,
@@ -15,7 +15,7 @@ import {
   todayBR,
 } from '@/lib/metrics'
 import type { Period } from '@/lib/metrics'
-import { formatDateTime, formatInt, periodLabel } from '@/lib/format'
+import { formatDateTime, formatInt, formatMoney, periodLabel } from '@/lib/format'
 import { GoalCard, CountCard } from '@/components/goal-card'
 import { GoalFunnels } from '@/components/goal-funnels'
 import { RateCard } from '@/components/rate-card'
@@ -168,9 +168,9 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
   // Quando o faturamento está zerado por falta de dado no GHL, a tela diz o motivo.
   const fat = dataMeta.faturamento
   const avisosFaturamento: string[] = []
-  if (temDados && fat.oportunidadesEmConsulta === 0) {
+  if (temDados && a.consultas_agendadas === 0) {
     avisosFaturamento.push(
-      'Faturamento em consultas soma o valor das oportunidades nas etapas Consulta Agendada e Pós consulta. Nenhuma oportunidade criada neste período está nessas etapas.',
+      `Faturamento em consultas vale ${formatMoney(VALOR_CONSULTA.agendada)} por consulta agendada no calendário do GHL e ${formatMoney(VALOR_CONSULTA.comparecida)} por consulta comparecida. Nenhuma consulta foi agendada neste período.`,
     )
   }
   if (!fat.tratamentoDisponivel) {

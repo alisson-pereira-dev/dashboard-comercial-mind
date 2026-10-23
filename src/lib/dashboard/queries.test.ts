@@ -13,7 +13,6 @@ const RESUMO = {
   leads_padrao: 0,
   consultas_n: 9,
   consultas_ganhas: 0,
-  consultas_valor: 1760.0,
   tratamento_n: 0,
   tratamento_valor: 0,
   tem_dados: true,
@@ -60,6 +59,7 @@ describe('getDashboardData com a função dashboard_resumo', () => {
       p_meses: ['2026-10-01'],
     })
 
+    // 2 consultas agendadas, nenhuma comparecida: 2 x R$ 160
     expect(d.realizado).toMatchObject({
       leads: 121,
       leads_qualificados: 8,
@@ -68,9 +68,9 @@ describe('getDashboardData com a função dashboard_resumo', () => {
       vendas: 0,
       consultas_novas: 9,
       tratamentosNovos: 0,
-      faturamento_consultas: 1760,
+      faturamento_consultas: 320,
       faturamento_tratamentos: 0,
-      faturamento_total: 1760,
+      faturamento_total: 320,
     })
     expect(d.metas.leads).toBe(130)
     expect(d.metas.faturamento_consultas).toBe(3000)
@@ -86,18 +86,20 @@ describe('getDashboardData com a função dashboard_resumo', () => {
     expect(d.faturamento).toEqual({
       tratamentoDisponivel: true,
       oportunidadesComValorTratamento: 0,
-      oportunidadesEmConsulta: 9,
     })
   })
 
-  it('o total do faturamento é consultas mais tratamentos', async () => {
+  it('consulta comparecida vale R$ 320 no lugar de R$ 160, e o total soma os tratamentos', async () => {
     const rpc = vi.fn().mockResolvedValue({
-      data: { ...RESUMO, consultas_valor: 6950, tratamento_valor: 5350, tratamento_n: 1 },
+      data: { ...RESUMO, consultas_agendadas: 10, comparecimentos: 4, tratamento_valor: 5350, tratamento_n: 1 },
       error: null,
     })
     const getDashboardData = await carregar()
     const d = await getDashboardData({ rpc } as unknown as SupabaseClient, periodo, null)
-    expect(d.realizado.faturamento_total).toBe(12300)
+    // 6 agendadas x 160 + 4 comparecidas x 320
+    expect(d.realizado.faturamento_consultas).toBe(2240)
+    expect(d.realizado.faturamento_tratamentos).toBe(5350)
+    expect(d.realizado.faturamento_total).toBe(2240 + 5350)
   })
 
   it('repassa o vendedor escolhido para a função', async () => {

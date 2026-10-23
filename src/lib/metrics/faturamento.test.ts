@@ -1,52 +1,46 @@
 import { describe, expect, it } from 'vitest'
-import { contaGanhas, somaConsultas, valorDeConsulta } from './faturamento'
+import { contaGanhas, faturamentoConsultas } from './faturamento'
 
-describe('valorDeConsulta', () => {
-  it('sem tratamento, é o valor da oportunidade', () => {
-    expect(valorDeConsulta({ valor: 160 })).toBe(160)
-    expect(valorDeConsulta({ valor: 160, valor_tratamento: null })).toBe(160)
-  })
-  it('com tratamento fechado, desconta o valor do tratamento', () => {
-    expect(valorDeConsulta({ valor: 5670, valor_tratamento: 5350 })).toBe(320)
-  })
-  it('aceita números em texto (como o banco devolve)', () => {
-    expect(valorDeConsulta({ valor: '5670.00', valor_tratamento: '5350.00' })).toBe(320)
-  })
-  it('nunca fica negativo (tratamento maior que o valor da oportunidade)', () => {
-    expect(valorDeConsulta({ valor: 100, valor_tratamento: 500 })).toBe(0)
-  })
-  it('valor vazio ou zero conta zero', () => {
-    expect(valorDeConsulta({ valor: 0 })).toBe(0)
-    expect(valorDeConsulta({ valor: '' })).toBe(0)
-  })
-})
+const V = { agendada: 160, comparecida: 320 }
 
-describe('somaConsultas', () => {
-  it('soma a parte de consulta de cada oportunidade', () => {
-    expect(somaConsultas([{ valor: 160 }, { valor: 160 }, { valor: 5670, valor_tratamento: 5350 }])).toBe(640)
+describe('faturamentoConsultas', () => {
+  it('cada consulta agendada soma 160', () => {
+    expect(faturamentoConsultas(1, 0, V)).toBe(160)
+    expect(faturamentoConsultas(10, 0, V)).toBe(1600)
   })
-  it('o total com o tratamento é o valor das oportunidades, sem contar em dobro', () => {
-    const ops = [{ valor: 160 }, { valor: 5670, valor_tratamento: 5350 }]
-    const tratamentos = 5350
-    expect(somaConsultas(ops) + tratamentos).toBe(160 + 5670)
+  it('a consulta comparecida passa a valer 320, no lugar dos 160 (não soma)', () => {
+    expect(faturamentoConsultas(1, 1, V)).toBe(320)
   })
-  it('lista vazia soma zero', () => {
-    expect(somaConsultas([])).toBe(0)
+  it('a fórmula do pedido: (agendadas não comparecidas x 160) + (comparecidas x 320)', () => {
+    // 10 agendadas, 4 delas comparecidas: 6 x 160 + 4 x 320
+    expect(faturamentoConsultas(10, 4, V)).toBe(6 * 160 + 4 * 320)
+    expect(faturamentoConsultas(10, 4, V)).toBe(2240)
+  })
+  it('equivale a agendadas x 160 mais comparecidas x 160', () => {
+    expect(faturamentoConsultas(10, 4, V)).toBe(10 * 160 + 4 * 160)
+  })
+  it('sem consultas, zero', () => {
+    expect(faturamentoConsultas(0, 0, V)).toBe(0)
+  })
+  it('comparecidas nunca passam das agendadas (dado inconsistente não infla o valor)', () => {
+    expect(faturamentoConsultas(2, 5, V)).toBe(2 * 320)
+  })
+  it('valores negativos ou lixo não geram faturamento negativo', () => {
+    expect(faturamentoConsultas(-3, 0, V)).toBe(0)
+    expect(faturamentoConsultas(3, -2, V)).toBe(3 * 160)
+  })
+  it('usa os valores informados', () => {
+    expect(faturamentoConsultas(2, 1, { agendada: 100, comparecida: 250 })).toBe(100 + 250)
   })
 })
 
 describe('contaGanhas', () => {
   it('conta só as oportunidades ganhas (tratamentos novos)', () => {
-    const ops = [
-      { valor: 160, status: 'aberta' },
-      { valor: 5670, status: 'ganha' },
-      { valor: 100, status: 'perdida' },
-      { valor: 800, status: 'ganha' },
-    ]
+    const ops = [{ status: 'aberta' }, { status: 'ganha' }, { status: 'perdida' }, { status: 'ganha' }]
     expect(contaGanhas(ops)).toBe(2)
   })
   it('sem status ou lista vazia, zero', () => {
-    expect(contaGanhas([{ valor: 1 }])).toBe(0)
+    expect(contaGanhas([{}])).toBe(0)
     expect(contaGanhas([])).toBe(0)
   })
 })

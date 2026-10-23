@@ -19,6 +19,18 @@ export const ETAPAS_CONSULTA_IDS = (
   .map((s) => s.trim())
   .filter(Boolean)
 
+// Valor de cada consulta no faturamento em consultas: R$ 160 quando agendada e R$ 320 quando
+// comparecida (o valor de comparecida substitui o de agendada). Sobrescreva por
+// VALOR_CONSULTA_AGENDADA e VALOR_CONSULTA_COMPARECIDA se o preço da clínica mudar.
+const numeroPositivo = (v: string | undefined, padrao: number) => {
+  const n = Number(v?.trim().replace(',', '.'))
+  return Number.isFinite(n) && n > 0 ? n : padrao
+}
+export const VALOR_CONSULTA = {
+  agendada: numeroPositivo(process.env.VALOR_CONSULTA_AGENDADA, 160),
+  comparecida: numeroPositivo(process.env.VALOR_CONSULTA_COMPARECIDA, 320),
+}
+
 // Pipeline em que o funil é medido (decisão de 22/10/2026): leads, leads qualificados e vendas são
 // oportunidades deste pipeline. Os demais (Clientes da base, Geladeira, Reativação) ficam de fora.
 // Mude por GHL_PIPELINE_FUNIL se o nome no GHL for outro nesta clínica.

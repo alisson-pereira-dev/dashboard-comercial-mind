@@ -1,22 +1,19 @@
-// Faturamento em consultas a partir das oportunidades que estão nas etapas de consulta.
-// O valor da oportunidade já inclui o tratamento quando ele foi fechado (ex.: R$ 5.670 com Valor do
-// tratamento de R$ 5.350 = R$ 320 de consulta + R$ 5.350 de tratamento). Para o tratamento não
-// entrar duas vezes (aqui e em "Em tratamentos"), a parte de consulta é o valor menos o tratamento.
-export type OportunidadeConsulta = {
-  valor: number | string
-  valor_tratamento?: number | string | null
-  status?: string
+// Faturamento em consultas (regra de 23/10/2026), calculado pelos agendamentos do calendário:
+// cada consulta agendada vale um valor fixo (R$ 160) e, quando é marcada como comparecida, a
+// consulta passa a valer outro (R$ 320). O valor de comparecida SUBSTITUI o de agendada, não soma.
+//   Em consultas = (agendadas não comparecidas x 160) + (comparecidas x 320)
+export type ValoresConsulta = { agendada: number; comparecida: number }
+
+export function faturamentoConsultas(agendadas: number, comparecidas: number, valores: ValoresConsulta): number {
+  const total = Math.max(agendadas, 0)
+  // Comparecida é uma agendada que mudou de status, então nunca passa do total de agendadas.
+  const comparecidasValidas = Math.min(Math.max(comparecidas, 0), total)
+  return (total - comparecidasValidas) * valores.agendada + comparecidasValidas * valores.comparecida
 }
 
 // Quantas das oportunidades estão ganhas (status "ganha"): os tratamentos novos.
+export type OportunidadeConsulta = { status?: string }
+
 export function contaGanhas(oportunidades: OportunidadeConsulta[]): number {
   return oportunidades.filter((o) => o.status === 'ganha').length
-}
-
-export function valorDeConsulta(o: OportunidadeConsulta): number {
-  return Math.max(Number(o.valor || 0) - Number(o.valor_tratamento ?? 0), 0)
-}
-
-export function somaConsultas(oportunidades: OportunidadeConsulta[]): number {
-  return oportunidades.reduce((acc, o) => acc + valorDeConsulta(o), 0)
 }

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { ETAPAS_CONSULTA_IDS, PIPELINE_FUNIL } from '@/lib/ghl/config'
-import { contaGanhas, somaConsultas, type OportunidadeConsulta } from '@/lib/metrics/faturamento'
+import { ETAPAS_CONSULTA_IDS, PIPELINE_FUNIL, VALOR_CONSULTA } from '@/lib/ghl/config'
+import { contaGanhas, faturamentoConsultas, type OportunidadeConsulta } from '@/lib/metrics/faturamento'
 import { METRIC_KEYS, type MetricKey, type Period } from '@/lib/metrics'
 
 export type Realizado = Record<MetricKey, number> & {
@@ -28,8 +28,6 @@ export type DashboardData = {
     tratamentoDisponivel: boolean
     /** Oportunidades criadas no período com o campo Valor do tratamento preenchido. */
     oportunidadesComValorTratamento: number
-    /** Oportunidades criadas no período que estão nas etapas de consulta do pipeline. */
-    oportunidadesEmConsulta: number
   }
 }
 
@@ -95,7 +93,6 @@ type Resumo = {
   leads_padrao: number
   consultas_n: number
   consultas_ganhas: number
-  consultas_valor: number | string
   tratamento_n: number
   tratamento_valor: number | string
   tem_dados: boolean
@@ -126,7 +123,7 @@ export async function getDashboardData(
     })
     if (!error && data) {
       const r = data as Resumo
-      const consultasValor = Number(r.consultas_valor)
+      const consultasValor = faturamentoConsultas(r.consultas_agendadas, r.comparecimentos, VALOR_CONSULTA)
       const tratamentoValor = Number(r.tratamento_valor)
       const s = r.ultimo_sync
       return {
@@ -152,7 +149,6 @@ export async function getDashboardData(
         faturamento: {
           tratamentoDisponivel: true,
           oportunidadesComValorTratamento: r.tratamento_n,
-          oportunidadesEmConsulta: r.consultas_n,
         },
       }
     }
@@ -176,28 +172,23 @@ async function getDashboardDataLegacy(
     vendedorId ? (q as unknown as { eq(c: string, v: string): T }).eq('responsavel_id', vendedorId) : q
 
   // Oportunidades criadas no período que estão nas etapas de consulta do pipeline do funil. Dela saem:
-  // - faturamento em consultas: o valor, menos o Valor do tratamento (o valor da oportunidade já o
-  //   inclui quando o tratamento foi fechado; assim ele não conta duas vezes);
   // - consultas novas: quantas são;
   // - tratamentos novos: quantas já estão ganhas (consulta feita e convertida em tratamento).
-  const valorDasConsultas = async (): Promise<{ valor: number; oportunidades: number; ganhas: number }> => {
-    const buscar = (colunas: string) =>
-      por(
-        supabase
-          .from('oportunidades')
-          .select(colunas)
-          .eq('pipeline_nome', PIPELINE_FUNIL)
-          .in('estagio_id', ETAPAS_CONSULTA_IDS)
-          .gte('criado_em', fromIso)
-          .lt('criado_em', toIso)
-          .limit(5000),
-      )
-    let res = await buscar('valor, valor_tratamento, status')
-    // Banco ainda sem a coluna valor_tratamento (migration por rodar): segue só com o valor.
-    if (res.error) res = await buscar('valor, status')
-    if (res.error) throw new Error(res.error.message)
-    const linhas = (res.data ?? []) as unknown as OportunidadeConsulta[]
-    return { valor: somaConsultas(linhas), oportunidades: linhas.length, ganhas: contaGanhas(linhas) }
+  // O faturamento em consultas NÃO vem daqui: é calculado pelos agendamentos (faturamentoConsultas).
+  const contagemConsultas = async (): Promise<{ oportunidades: number; ganhas: number }> => {
+    const { data, error } = await por(
+      supabase
+        .from('oportunidades')
+        .select('status')
+        .eq('pipeline_nome', PIPELINE_FUNIL)
+        .in('estagio_id', ETAPAS_CONSULTA_IDS)
+        .gte('criado_em', fromIso)
+        .lt('criado_em', toIso)
+        .limit(5000),
+    )
+    if (error) throw new Error(error.message)
+    const linhas = (data ?? []) as unknown as OportunidadeConsulta[]
+    return { oportunidades: linhas.length, ganhas: contaGanhas(linhas) }
   }
 
   const [
@@ -206,7 +197,7 @@ async function getDashboardDataLegacy(
     agendadas,
     comparecimentos,
     vendasRes,
-    consultasValor,
+    consultasContagem,
     tratamentoRes,
     metasRes,
     syncRes,
@@ -265,7 +256,7 @@ async function getDashboardDataLegacy(
           .lt('criado_em', toIso)
           .limit(5000),
       ),
-      valorDasConsultas(),
+      contagemConsultas(),
       // Faturamento em tratamentos: campo Valor do tratamento das oportunidades criadas no período.
       // Sem a coluna no banco (migration por rodar) a consulta falha e o valor fica indisponível.
       por(
@@ -317,17 +308,19 @@ async function getDashboardDataLegacy(
   const comValorTratamento = tratamentoDisponivel ? (tratamentoRes.data ?? []) : []
   const faturamentoTratamentos = comValorTratamento.reduce((acc, r) => acc + Number(r.valor_tratamento), 0)
 
+  const faturamentoDeConsultas = faturamentoConsultas(agendadas, comparecimentos, VALOR_CONSULTA)
+
   const realizado: Realizado = {
     leads,
     leads_qualificados: qualificados,
     consultas_agendadas: agendadas,
     comparecimentos,
     vendas: vendas.length,
-    faturamento_consultas: consultasValor.valor,
+    faturamento_consultas: faturamentoDeConsultas,
     faturamento_tratamentos: faturamentoTratamentos,
-    faturamento_total: consultasValor.valor + faturamentoTratamentos,
-    consultas_novas: consultasValor.oportunidades,
-    tratamentosNovos: consultasValor.ganhas,
+    faturamento_total: faturamentoDeConsultas + faturamentoTratamentos,
+    consultas_novas: consultasContagem.oportunidades,
+    tratamentosNovos: consultasContagem.ganhas,
   }
 
   const metas = somarMetas(period, metasRes.data ?? [])
@@ -348,7 +341,6 @@ async function getDashboardDataLegacy(
     faturamento: {
       tratamentoDisponivel,
       oportunidadesComValorTratamento: comValorTratamento.length,
-      oportunidadesEmConsulta: consultasValor.oportunidades,
     },
   }
 }
