@@ -2,12 +2,12 @@
 
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-import { ETAPA_CONSULTA_AGENDADA_ID, PIPELINE_FUNIL, VALOR_CONSULTA } from '@/lib/ghl/config'
+import { VALOR_CONSULTA } from '@/lib/ghl/config'
 import {
   montarConsultas,
+  type AgendamentoAgendado,
   type Comparecimento,
   type ConsultaLinha,
-  type OportunidadeAgendada,
 } from '@/lib/consultas'
 
 const entrada = z.object({
@@ -22,10 +22,11 @@ export type ConsultasResultado =
 
 const DIA_MS = 86_400_000
 
-// Linhas que formam o "Em consultas" de um período: as MESMAS que o cartão conta (função dashboard_resumo):
-// oportunidades do pipeline do funil que estão na etapa Consulta Agendada e mudaram de etapa no período,
-// mais os agendamentos marcados como "compareceu" e atualizados no período. Com vendedor, só os dele.
-// Roda com a sessão de quem está logado, então o RLS continua valendo.
+// Linhas que formam o "Em consultas" de um período: as MESMAS que o cartão conta (função dashboard_resumo,
+// campo `faturamento_agendadas`): agendamentos do calendário não cancelados criados no período, mais os
+// marcados como "compareceu" e atualizados no período (regra de 26/10/2026, de volta ao calendário; ver
+// `lib/metrics/faturamento.ts`). Independente do card "Consultas agendadas" do funil, que usa a etapa do
+// pipeline. Com vendedor, só os dele. Roda com a sessão de quem está logado, então o RLS continua valendo.
 export async function listarConsultas(input: {
   inicio: string
   fim: string
@@ -43,14 +44,13 @@ export async function listarConsultas(input: {
     const { data: auth } = await supabase.auth.getClaims()
     if (!auth?.claims) return { ok: false, erro: 'Sua sessão expirou. Entre de novo.' }
 
-    let qAgendadas = supabase
-      .from('oportunidades')
-      .select('id, contato_id, etapa_alterada_em')
-      .eq('pipeline_nome', PIPELINE_FUNIL)
-      .eq('estagio_id', ETAPA_CONSULTA_AGENDADA_ID)
-      .gte('etapa_alterada_em', inicio)
-      .lt('etapa_alterada_em', fim)
-      .order('etapa_alterada_em', { ascending: true })
+    let qAgendados = supabase
+      .from('agendamentos')
+      .select('id, contato_id, data_inicio, criado_em')
+      .neq('status', 'cancelado')
+      .gte('criado_em', inicio)
+      .lt('criado_em', fim)
+      .order('criado_em', { ascending: true })
       .limit(1000)
     let qComparecimentos = supabase
       .from('agendamentos')
@@ -61,19 +61,19 @@ export async function listarConsultas(input: {
       .order('atualizado_em_ghl', { ascending: true })
       .limit(1000)
     if (vendedorId) {
-      qAgendadas = qAgendadas.eq('responsavel_id', vendedorId)
+      qAgendados = qAgendados.eq('responsavel_id', vendedorId)
       qComparecimentos = qComparecimentos.eq('responsavel_id', vendedorId)
     }
-    const [agendadasRes, comparecimentosRes] = await Promise.all([qAgendadas, qComparecimentos])
-    if (agendadasRes.error || comparecimentosRes.error) {
+    const [agendadosRes, comparecimentosRes] = await Promise.all([qAgendados, qComparecimentos])
+    if (agendadosRes.error || comparecimentosRes.error) {
       return { ok: false, erro: 'Não foi possível carregar as consultas.' }
     }
 
-    const agendadas = (agendadasRes.data ?? []) as OportunidadeAgendada[]
+    const agendados = (agendadosRes.data ?? []) as AgendamentoAgendado[]
     const comparecimentos = (comparecimentosRes.data ?? []) as Comparecimento[]
     const ids = [
       ...new Set(
-        [...agendadas, ...comparecimentos].map((r) => r.contato_id).filter((c): c is string => Boolean(c)),
+        [...agendados, ...comparecimentos].map((r) => r.contato_id).filter((c): c is string => Boolean(c)),
       ),
     ]
     const nomes = new Map<string, string | null>()
@@ -83,7 +83,7 @@ export async function listarConsultas(input: {
       for (const c of data ?? []) nomes.set(c.id, c.nome)
     }
 
-    const { consultas, total } = montarConsultas(agendadas, comparecimentos, nomes, VALOR_CONSULTA)
+    const { consultas, total } = montarConsultas(agendados, comparecimentos, nomes, VALOR_CONSULTA)
     return { ok: true, consultas, total, valores: VALOR_CONSULTA }
   } catch {
     return { ok: false, erro: 'Não foi possível carregar as consultas.' }

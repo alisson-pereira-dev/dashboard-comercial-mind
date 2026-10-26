@@ -29,9 +29,9 @@ export function ConsultasDetalhe({
   return (
     <DetalheJanela<Dados>
       titulo={`Consultas de ${periodo}`}
-      descricao='São as linhas que formam o valor de "Em consultas": cada oportunidade que entrou na etapa Consulta Agendada vale R$ 160, e cada comparecimento marcado no período acrescenta R$ 160 (a consulta passa a valer R$ 320, no lugar dos 160).'
-      nota='O período vale pela data em que a oportunidade mudou para a etapa Consulta Agendada e pela data em que o agendamento foi marcado como compareceu. Só aparecem oportunidades que ainda estão na etapa Consulta Agendada.'
-      textoVazio="Nenhuma oportunidade entrou na etapa Consulta Agendada e nenhum comparecimento foi marcado neste período."
+      descricao='São as linhas que formam o valor de "Em consultas": cada agendamento criado no calendário do GHL vale R$ 160, e cada comparecimento marcado no período acrescenta R$ 160 (a consulta passa a valer R$ 320, no lugar dos 160). Um mesmo agendamento pode gerar as duas linhas.'
+      nota='O período vale pela data em que o agendamento foi criado e pela data em que foi marcado como compareceu (datas diferentes do mesmo agendamento). Agendamentos cancelados não entram.'
+      textoVazio="Nenhum agendamento foi criado no calendário e nenhum comparecimento foi marcado neste período."
       carregar={async () => {
         const r = await listarConsultas({ inicio, fim, vendedorId })
         return r.ok ? { ok: true, dados: r } : r
@@ -67,9 +67,7 @@ export function ConsultasDetalhe({
                 </td>
                 <td className="py-2.5 pr-3 tabular-nums">
                   {formatDateTime(c.data)}
-                  {c.consultaEm ? (
-                    <span className="block text-xs text-muted">Consulta em {formatDateTime(c.consultaEm)}</span>
-                  ) : null}
+                  <span className="block text-xs text-muted">Consulta em {formatDateTime(c.consultaEm)}</span>
                 </td>
                 <td className="py-2.5 text-right font-semibold tabular-nums">{formatMoney(c.valor)}</td>
               </tr>

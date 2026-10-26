@@ -4,10 +4,11 @@ import { parsePeriod } from '@/lib/metrics/period'
 
 // Saída real da função dashboard_resumo (out/2026, clínica toda), tirada de uma cópia dos dados.
 const RESUMO = {
-  versao: 2,
+  versao: 3,
   leads: 121,
   leads_qualificados: 8,
-  consultas_agendadas: 2,
+  consultas_agendadas: 8,
+  faturamento_agendadas: 2,
   comparecimentos: 0,
   vendas: 0,
   vendas_valor: 0,
@@ -67,7 +68,7 @@ describe('getDashboardData com a função dashboard_resumo', () => {
     expect(d.realizado).toMatchObject({
       leads: 121,
       leads_qualificados: 8,
-      consultas_agendadas: 2,
+      consultas_agendadas: 8,
       comparecimentos: 0,
       vendas: 0,
       consultas_novas: 9,
@@ -93,7 +94,7 @@ describe('getDashboardData com a função dashboard_resumo', () => {
 
   it('consulta comparecida vale R$ 320 no lugar de R$ 160; tratamentos vêm das ganhas; o total soma os dois', async () => {
     const rpc = vi.fn().mockResolvedValue({
-      data: { ...RESUMO, consultas_agendadas: 10, comparecimentos: 4, vendas: 3, vendas_valor: 17010 },
+      data: { ...RESUMO, faturamento_agendadas: 10, comparecimentos: 4, vendas: 3, vendas_valor: 17010 },
       error: null,
     })
     const getDashboardData = await carregar()
@@ -147,8 +148,9 @@ describe('getDashboardData com a função dashboard_resumo', () => {
 
 describe('getDashboardData com o banco desatualizado', () => {
   it('versão anterior da função (sem "versao") não vira número pela regra antiga: avisa', async () => {
-    const { versao: _removida, ...antiga } = RESUMO
+    const { versao: _removida, faturamento_agendadas: _fa, ...antiga } = RESUMO
     void _removida
+    void _fa
     const rpc = vi.fn().mockResolvedValue({ data: antiga, error: null })
     const getDashboardData = await carregar()
     await expect(getDashboardData({ rpc } as unknown as SupabaseClient, periodo, null)).rejects.toMatchObject({

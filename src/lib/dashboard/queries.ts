@@ -45,8 +45,8 @@ export class BancoDesatualizadoError extends Error {
   }
 }
 
-// Versão da função dashboard_resumo que este código espera (migration 20261026000002).
-const VERSAO_FUNCAO = 2
+// Versão da função dashboard_resumo que este código espera (migration 20261026000003).
+const VERSAO_FUNCAO = 3
 
 export type Vendedor = { id: string; nome: string }
 
@@ -91,12 +91,14 @@ function somarMetas(period: Period, rows: MetaRow[]): Record<MetricKey, number |
   return metas
 }
 
-// Resposta da função dashboard_resumo (supabase/migrations/20261026000002).
+// Resposta da função dashboard_resumo (supabase/migrations/20261026000003).
 type Resumo = {
   versao: number
   leads: number
   leads_qualificados: number
   consultas_agendadas: number
+  /** Agendamentos do calendário (não cancelados, criado_em no período): base do "Em consultas". */
+  faturamento_agendadas: number
   comparecimentos: number
   vendas: number
   vendas_valor: number | string
@@ -114,8 +116,10 @@ type Resumo = {
 
 // vendedorId = null mostra a clínica toda e usa as metas gerais (usuario_id = 'clinica').
 // Uma única ida ao banco (função dashboard_resumo), que aplica a base de data de cada etapa:
-// leads e qualificados pelo "criado em"; consultas agendadas pela última mudança de etapa; comparecimentos
-// pela atualização do agendamento; vendas pela data em que foram marcadas como ganhas.
+// leads e qualificados pelo "criado em"; consultas agendadas (card do funil) pela última mudança de etapa;
+// comparecimentos pela atualização do agendamento; vendas pela data em que foram marcadas como ganhas.
+// O faturamento em consultas usa um número PRÓPRIO (`faturamento_agendadas`), independente do card
+// "Consultas agendadas": volta a contar pelo calendário do GHL (decisão de 26/10/2026, "Etapa 1").
 export async function getDashboardData(
   supabase: SupabaseClient,
   period: Period,
@@ -137,7 +141,7 @@ export async function getDashboardData(
   const r = data as Resumo | null
   if (!r || r.versao !== VERSAO_FUNCAO) throw new BancoDesatualizadoError()
 
-  const consultasValor = faturamentoConsultas(r.consultas_agendadas, r.comparecimentos, VALOR_CONSULTA)
+  const consultasValor = faturamentoConsultas(r.faturamento_agendadas, r.comparecimentos, VALOR_CONSULTA)
   const tratamentoValor = Number(r.vendas_valor)
   const s = r.ultimo_sync
   return {

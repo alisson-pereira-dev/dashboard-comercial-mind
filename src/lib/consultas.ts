@@ -1,16 +1,19 @@
 import type { ValoresConsulta } from '@/lib/metrics/faturamento'
 
-// Lista das linhas que formam o cartão "Em consultas" (regra de 26/10/2026). O cartão soma
+// Lista das linhas que formam o cartão "Em consultas" (regra de 26/10/2026, de volta ao calendário do GHL,
+// como na "Etapa 1" original: a mudança de base de data do funil havia feito o faturamento usar a etapa do
+// pipeline por engano, e o cliente pediu para desfazer só essa parte). O cartão soma
 //   (agendadas - comparecidas) x R$ 160 + comparecidas x R$ 320  =  agendadas x R$ 160 + comparecidas x R$ 160
-// em que agendadas são as oportunidades na etapa Consulta Agendada (pela data da mudança de etapa) e
-// comparecidas são os agendamentos marcados como "compareceu" (pela data da atualização). Por isso a lista
-// tem dois tipos de linha: cada oportunidade agendada vale R$ 160 e cada comparecimento ACRESCENTA R$ 160
-// (a consulta passa a valer R$ 320 no lugar dos R$ 160). A soma é igual ao cartão.
+// em que agendadas são os agendamentos do calendário não cancelados (pela data de CRIAÇÃO do agendamento) e
+// comparecidas são os agendamentos marcados como "compareceu" (pela data de ATUALIZAÇÃO, quando o status
+// mudou). As duas vêm da MESMA tabela (agendamentos), com datas diferentes: um agendamento criado e também
+// marcado como comparecido dentro do mesmo período gera DUAS linhas (soma R$ 320 ao todo).
 
-export type OportunidadeAgendada = {
+export type AgendamentoAgendado = {
   id: string
   contato_id: string | null
-  etapa_alterada_em: string
+  data_inicio: string
+  criado_em: string
 }
 
 export type Comparecimento = {
@@ -24,15 +27,15 @@ export type ConsultaLinha = {
   id: string
   tipo: 'agendada' | 'compareceu'
   paciente: string
-  /** Data que põe a linha no período: mudança de etapa (agendada) ou marcação do comparecimento. */
+  /** Data que põe a linha no período: criação do agendamento (agendada) ou marcação do comparecimento. */
   data: string
-  /** Data e hora da consulta, quando a linha vem de um agendamento do calendário. */
-  consultaEm: string | null
+  /** Data e hora da consulta, do calendário. */
+  consultaEm: string
   valor: number
 }
 
 export function montarConsultas(
-  agendadas: OportunidadeAgendada[],
+  agendados: AgendamentoAgendado[],
   comparecimentos: Comparecimento[],
   nomes: Map<string, string | null>,
   valores: ValoresConsulta,
@@ -41,13 +44,13 @@ export function montarConsultas(
     (contatoId ? nomes.get(contatoId)?.trim() : '') || 'Sem nome no GHL'
 
   const consultas: ConsultaLinha[] = [
-    ...agendadas.map(
-      (o): ConsultaLinha => ({
-        id: `agendada-${o.id}`,
+    ...agendados.map(
+      (a): ConsultaLinha => ({
+        id: `agendada-${a.id}`,
         tipo: 'agendada',
-        paciente: nome(o.contato_id),
-        data: o.etapa_alterada_em,
-        consultaEm: null,
+        paciente: nome(a.contato_id),
+        data: a.criado_em,
+        consultaEm: a.data_inicio,
         valor: valores.agendada,
       }),
     ),

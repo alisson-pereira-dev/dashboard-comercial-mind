@@ -183,7 +183,7 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
   const avisosFaturamento: string[] = []
   if (temDados && a.faturamento_consultas === 0) {
     avisosFaturamento.push(
-      `Faturamento em consultas vale ${formatMoney(VALOR_CONSULTA.agendada)} por oportunidade que entrou na etapa Consulta Agendada e ${formatMoney(VALOR_CONSULTA.comparecida)} por consulta comparecida. Nenhuma oportunidade entrou nessa etapa neste período.`,
+      `Faturamento em consultas vale ${formatMoney(VALOR_CONSULTA.agendada)} por agendamento criado no calendário do GHL e ${formatMoney(VALOR_CONSULTA.comparecida)} por consulta comparecida. Nenhum agendamento foi criado nem comparecido neste período.`,
     )
   }
   if (temDados && a.vendas === 0) {
