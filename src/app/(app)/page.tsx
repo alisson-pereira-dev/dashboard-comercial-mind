@@ -474,9 +474,10 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
           subtitle={`Resultados registrados em ${periodLabel(periodVendas)}${vendedorNome ? ` (${vendedorNome})` : ''}.`}
         />
         {vendedorNome ? <AtribuicaoNota data={dataVendas} period={periodVendas} nome={vendedorNome} /> : null}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3 2xl:grid-cols-5">
           <GoalCard
             standalone
+            compacto
             icon={BarChart3}
             label="Vendas"
             info={METRIC_HELP.vendas}
@@ -485,6 +486,7 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
           />
           <GoalCard
             standalone
+            compacto
             icon={CalendarDays}
             label="Consultas novas"
             info={METRIC_HELP.consultas_novas}

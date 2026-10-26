@@ -22,6 +22,7 @@ export function GoalCard({
   money = false,
   highlight = false,
   standalone = false,
+  compacto = false,
   rodape,
 }: {
   icon: LucideIcon
@@ -34,7 +35,12 @@ export function GoalCard({
   highlight?: boolean
   /** Cartão solto na página (com sombra), em vez de cartão dentro de outro. */
   standalone?: boolean
-  /** Ação no pé do cartão (por exemplo, "Ver as consultas deste valor"). */
+  /**
+   * Para cartões lado a lado em uma linha só (Números de vendas): cabeçalho com altura de duas linhas e o
+   * selo de status no pé do cartão, para o número ficar na mesma altura em todos os cartões da linha.
+   */
+  compacto?: boolean
+  /** Ação no pé do cartão (por exemplo, "Ver as consultas"). */
   rodape?: React.ReactNode
 }) {
   const fmt = money ? formatMoney : formatInt
@@ -50,14 +56,14 @@ export function GoalCard({
   return (
     <div className={`${shell} flex flex-col p-5`}>
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className={`flex min-w-0 items-center gap-3 ${compacto ? 'min-h-12' : ''}`}>
           <IconCircle Icon={icon} />
-          <p className="flex items-center gap-2 text-[15px] font-semibold text-navy">
+          <p className="flex min-w-0 items-center gap-2 text-balance text-[15px] font-semibold text-navy">
             {label}
             <InfoTip label={label} text={info} />
           </p>
         </div>
-        <StatusPill status={status} />
+        {compacto ? null : <StatusPill status={status} />}
       </div>
 
       <p className="mt-4 text-[32px] font-bold leading-none tracking-tight text-navy">{fmt(realizado)}</p>
@@ -87,12 +93,18 @@ export function GoalCard({
           </>
         )}
       </p>
+      {compacto ? (
+        <div className="mt-3">
+          <StatusPill status={status} />
+        </div>
+      ) : null}
       {rodape ? <div className="mt-3">{rodape}</div> : null}
     </div>
   )
 }
 
-// Número sem meta (consultas novas, tratamentos novos).
+// Número sem meta (tratamentos novos, fechamentos em consulta e em follow up). Usado lado a lado com os
+// GoalCard compactos, então o cabeçalho tem a mesma altura mínima (duas linhas).
 export function CountCard({
   icon,
   label,
@@ -106,9 +118,9 @@ export function CountCard({
 }) {
   return (
     <div className="card flex flex-col p-5">
-      <div className="flex items-center gap-3">
+      <div className="flex min-h-12 items-center gap-3">
         <IconCircle Icon={icon} />
-        <p className="flex items-center gap-2 text-[15px] font-semibold text-navy">
+        <p className="flex min-w-0 items-center gap-2 text-balance text-[15px] font-semibold text-navy">
           {label}
           <InfoTip label={label} text={info} />
         </p>
