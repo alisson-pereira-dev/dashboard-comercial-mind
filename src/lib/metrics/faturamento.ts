@@ -11,6 +11,12 @@ export function faturamentoConsultas(agendadas: number, comparecidas: number, va
   return (total - comparecidasValidas) * valores.agendada + comparecidasValidas * valores.comparecida
 }
 
+// Valor de UMA consulta: R$ 320 se compareceu, R$ 160 nas demais (agendada ou que faltou).
+// A soma deste valor sobre as consultas do período é igual a faturamentoConsultas.
+export function valorDaConsulta(status: string, valores: ValoresConsulta): number {
+  return status === 'compareceu' ? valores.comparecida : valores.agendada
+}
+
 // Quantas das oportunidades estão ganhas (status "ganha"): os tratamentos novos.
 export type OportunidadeConsulta = { status?: string }
 

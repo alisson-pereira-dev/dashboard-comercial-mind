@@ -329,3 +329,8 @@ body[data-navegando] main {
     border-radius: 0;
   }
 }
+
+/* Com uma janela (dialog) aberta, a página de trás não rola. */
+body:has(dialog[open]) {
+  overflow: hidden;
+}

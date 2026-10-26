@@ -17,6 +17,7 @@ import {
 import type { Period } from '@/lib/metrics'
 import { formatDateTime, formatInt, formatMoney, periodLabel } from '@/lib/format'
 import { GoalCard, CountCard } from '@/components/goal-card'
+import { ConsultasDetalhe } from '@/components/consultas-detalhe'
 import { GoalFunnels } from '@/components/goal-funnels'
 import { RateCard } from '@/components/rate-card'
 import { PageHeader } from '@/components/page-header'
@@ -255,14 +256,30 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                 id: 'consultas',
                 label: 'Em consultas',
                 node: (
-                  <GoalCard
-                    icon={CalendarDays}
-                    label="Em consultas"
-                    info={METRIC_HELP.faturamento_consultas}
-                    realizado={a.faturamento_consultas}
-                    meta={metasA.faturamento_consultas}
-                    money
-                  />
+                  <ConsultasDetalhe
+                    inicio={periodMeta.fromIso}
+                    fim={periodMeta.toIso}
+                    vendedorId={vendedorId}
+                    periodo={periodLabel(periodMeta)}
+                  >
+                    <GoalCard
+                      icon={CalendarDays}
+                      label="Em consultas"
+                      info={METRIC_HELP.faturamento_consultas}
+                      realizado={a.faturamento_consultas}
+                      meta={metasA.faturamento_consultas}
+                      money
+                      rodape={
+                        <button
+                          type="button"
+                          data-abre-detalhe
+                          className="text-sm font-semibold text-brand-ink underline-offset-4 hover:underline"
+                        >
+                          Ver as consultas deste valor
+                        </button>
+                      }
+                    />
+                  </ConsultasDetalhe>
                 ),
               },
               {

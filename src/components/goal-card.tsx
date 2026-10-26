@@ -22,6 +22,7 @@ export function GoalCard({
   money = false,
   highlight = false,
   standalone = false,
+  rodape,
 }: {
   icon: LucideIcon
   label: string
@@ -33,6 +34,8 @@ export function GoalCard({
   highlight?: boolean
   /** Cartão solto na página (com sombra), em vez de cartão dentro de outro. */
   standalone?: boolean
+  /** Ação no pé do cartão (por exemplo, "Ver as consultas deste valor"). */
+  rodape?: React.ReactNode
 }) {
   const fmt = money ? formatMoney : formatInt
   const progress = goalProgress(realizado, meta)
@@ -84,6 +87,7 @@ export function GoalCard({
           </>
         )}
       </p>
+      {rodape ? <div className="mt-3">{rodape}</div> : null}
     </div>
   )
 }
