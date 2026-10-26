@@ -16,7 +16,7 @@ export const METRIC_HELP: Record<MetricKey, string> = {
   faturamento_consultas:
     'Cada consulta agendada no calendário do GHL vale R$ 160, e quando é marcada como comparecida passa a valer R$ 320 (no lugar dos 160, não somando). Consultas canceladas não contam. Considera as consultas criadas dentro do período. Clique no cartão para ver quais consultas formam o valor.',
   faturamento_tratamentos:
-    'Soma do valor das oportunidades do pipeline Qualificação (IA) marcadas como ganhas, criadas dentro do período.',
+    'Soma do valor das oportunidades do pipeline Qualificação (IA) marcadas como ganhas, criadas dentro do período. Clique no cartão para ver quais oportunidades formam o valor.',
   faturamento_total: 'Faturamento em consultas mais faturamento em tratamentos.',
 }
 

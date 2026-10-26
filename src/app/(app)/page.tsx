@@ -18,6 +18,7 @@ import type { Period } from '@/lib/metrics'
 import { formatDateTime, formatInt, formatMoney, periodLabel } from '@/lib/format'
 import { GoalCard, CountCard } from '@/components/goal-card'
 import { ConsultasDetalhe } from '@/components/consultas-detalhe'
+import { TratamentosDetalhe } from '@/components/tratamentos-detalhe'
 import { GoalFunnels } from '@/components/goal-funnels'
 import { RateCard } from '@/components/rate-card'
 import { PageHeader } from '@/components/page-header'
@@ -275,7 +276,7 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                           data-abre-detalhe
                           className="text-sm font-semibold text-brand-ink underline-offset-4 hover:underline"
                         >
-                          Ver as consultas deste valor
+                          Ver as consultas
                         </button>
                       }
                     />
@@ -286,14 +287,30 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                 id: 'tratamentos',
                 label: 'Em tratamentos',
                 node: (
-                  <GoalCard
-                    icon={FileText}
-                    label="Em tratamentos"
-                    info={METRIC_HELP.faturamento_tratamentos}
-                    realizado={a.faturamento_tratamentos}
-                    meta={metasA.faturamento_tratamentos}
-                    money
-                  />
+                  <TratamentosDetalhe
+                    inicio={periodMeta.fromIso}
+                    fim={periodMeta.toIso}
+                    vendedorId={vendedorId}
+                    periodo={periodLabel(periodMeta)}
+                  >
+                    <GoalCard
+                      icon={FileText}
+                      label="Em tratamentos"
+                      info={METRIC_HELP.faturamento_tratamentos}
+                      realizado={a.faturamento_tratamentos}
+                      meta={metasA.faturamento_tratamentos}
+                      money
+                      rodape={
+                        <button
+                          type="button"
+                          data-abre-detalhe
+                          className="text-sm font-semibold text-brand-ink underline-offset-4 hover:underline"
+                        >
+                          Ver os tratamentos
+                        </button>
+                      }
+                    />
+                  </TratamentosDetalhe>
                 ),
               },
               {
