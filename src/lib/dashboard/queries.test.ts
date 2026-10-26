@@ -14,6 +14,8 @@ const RESUMO = {
   leads_padrao: 0,
   consultas_n: 9,
   consultas_ganhas: 0,
+  fechamentos_consulta: 0,
+  fechamentos_followup: 0,
   tem_dados: true,
   metas: [
     { metrica: 'leads', valor: 130.0, mes_referencia: '2026-10-01' },
@@ -55,6 +57,8 @@ describe('getDashboardData com a função dashboard_resumo', () => {
       p_fim: periodo.toIso,
       p_vendedor: null,
       p_pipeline: 'Qualificação ( IA )',
+      p_etapa_consulta: '68bce141-2351-477d-9b92-1fc3cf846650',
+      p_etapa_followup: 'aed1d454-d7e3-45d5-8d81-ead7f452c3b8',
       p_meses: ['2026-10-01'],
     })
 
@@ -67,6 +71,8 @@ describe('getDashboardData com a função dashboard_resumo', () => {
       vendas: 0,
       consultas_novas: 9,
       tratamentosNovos: 0,
+      fechamentosConsulta: 0,
+      fechamentosFollowup: 0,
       faturamento_consultas: 320,
       faturamento_tratamentos: 0,
       faturamento_total: 320,
@@ -98,6 +104,18 @@ describe('getDashboardData com a função dashboard_resumo', () => {
     expect(d.realizado.faturamento_total).toBe(2240 + 17010)
   })
 
+  it('fechamentos em consulta e em follow up vêm da função e somam os tratamentos novos', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: { ...RESUMO, consultas_n: 12, consultas_ganhas: 12, fechamentos_consulta: 8, fechamentos_followup: 4 },
+      error: null,
+    })
+    const getDashboardData = await carregar()
+    const d = await getDashboardData({ rpc } as unknown as SupabaseClient, periodo, null)
+    expect(d.realizado.fechamentosConsulta).toBe(8)
+    expect(d.realizado.fechamentosFollowup).toBe(4)
+    expect(d.realizado.fechamentosConsulta + d.realizado.fechamentosFollowup).toBe(d.realizado.tratamentosNovos)
+  })
+
   it('repassa o vendedor escolhido para a função', async () => {
     const rpc = vi.fn().mockResolvedValue({ data: RESUMO, error: null })
     const getDashboardData = await carregar()
@@ -127,6 +145,20 @@ describe('getDashboardData com a função dashboard_resumo', () => {
 })
 
 describe('getDashboardData com a função desatualizada', () => {
+  it('versão da função sem os fechamentos usa o caminho antigo, em vez de mostrar zero', async () => {
+    const { fechamentos_consulta: _a, fechamentos_followup: _b, ...antiga } = RESUMO
+    void _a
+    void _b
+    const rpc = vi.fn().mockResolvedValue({ data: antiga, error: null })
+    const from = vi.fn(() => {
+      throw new Error('caminho-antigo-chamado')
+    })
+    const getDashboardData = await carregar()
+    await expect(getDashboardData({ rpc, from } as unknown as SupabaseClient, periodo, null)).rejects.toThrow(
+      'caminho-antigo-chamado',
+    )
+  })
+
   it('versão antiga da função (sem vendas_valor) usa o caminho antigo, em vez de mostrar tratamentos zerado', async () => {
     const { vendas_valor: _removido, ...antiga } = RESUMO
     void _removido

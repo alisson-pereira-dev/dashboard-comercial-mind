@@ -18,8 +18,15 @@ export function valorDaConsulta(status: string, valores: ValoresConsulta): numbe
 }
 
 // Quantas das oportunidades estão ganhas (status "ganha"): os tratamentos novos.
-export type OportunidadeConsulta = { status?: string }
+export type OportunidadeConsulta = { status?: string; estagio_id?: string | null }
 
 export function contaGanhas(oportunidades: OportunidadeConsulta[]): number {
   return oportunidades.filter((o) => o.status === 'ganha').length
+}
+
+// Quantas das oportunidades estão ganhas E na etapa informada (a etapa em que ficaram no pipeline).
+// Fechamentos em consulta = ganhas em "Consulta Agendada"; Fechamentos em follow up = ganhas em
+// "Pós consulta". As duas somam os tratamentos novos (contaGanhas sobre as duas etapas).
+export function contaGanhasNaEtapa(oportunidades: OportunidadeConsulta[], etapaId: string): number {
+  return oportunidades.filter((o) => o.status === 'ganha' && o.estagio_id === etapaId).length
 }

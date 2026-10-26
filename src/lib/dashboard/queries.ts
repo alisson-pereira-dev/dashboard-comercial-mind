@@ -1,10 +1,25 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { ETAPAS_CONSULTA_IDS, PIPELINE_FUNIL, VALOR_CONSULTA } from '@/lib/ghl/config'
-import { contaGanhas, faturamentoConsultas, type OportunidadeConsulta } from '@/lib/metrics/faturamento'
+import {
+  ETAPAS_CONSULTA_IDS,
+  ETAPA_CONSULTA_AGENDADA_ID,
+  ETAPA_POS_CONSULTA_ID,
+  PIPELINE_FUNIL,
+  VALOR_CONSULTA,
+} from '@/lib/ghl/config'
+import {
+  contaGanhas,
+  contaGanhasNaEtapa,
+  faturamentoConsultas,
+  type OportunidadeConsulta,
+} from '@/lib/metrics/faturamento'
 import { METRIC_KEYS, type MetricKey, type Period } from '@/lib/metrics'
 
 export type Realizado = Record<MetricKey, number> & {
   tratamentosNovos: number
+  /** Ganhas que estão na etapa "Consulta Agendada" (criadas no período). */
+  fechamentosConsulta: number
+  /** Ganhas que estão na etapa "Pós consulta" (criadas no período). */
+  fechamentosFollowup: number
 }
 
 export type SyncInfo = {
@@ -87,6 +102,8 @@ type Resumo = {
   leads_padrao: number
   consultas_n: number
   consultas_ganhas: number
+  fechamentos_consulta: number
+  fechamentos_followup: number
   tem_dados: boolean
   metas: MetaRow[]
   ultimo_sync: { status: 'rodando' | 'ok' | 'erro'; iniciado_em: string; finalizado_em: string | null; erro: string | null } | null
@@ -111,10 +128,12 @@ export async function getDashboardData(
       p_vendedor: vendedorId,
       p_pipeline: PIPELINE_FUNIL,
       p_etapas: ETAPAS_CONSULTA_IDS,
+      p_etapa_consulta: ETAPA_CONSULTA_AGENDADA_ID,
+      p_etapa_followup: ETAPA_POS_CONSULTA_ID,
       p_meses: period.metaPesos.map((p) => p.mes),
     })
-    // Versão antiga da função (migration 000002, sem vendas_valor): usa o caminho antigo.
-    if (!error && data && 'vendas_valor' in (data as object)) {
+    // Versão antiga da função (sem vendas_valor ou sem os fechamentos): usa o caminho antigo.
+    if (!error && data && 'vendas_valor' in (data as object) && 'fechamentos_consulta' in (data as object)) {
       const r = data as Resumo
       const consultasValor = faturamentoConsultas(r.consultas_agendadas, r.comparecimentos, VALOR_CONSULTA)
       const tratamentoValor = Number(r.vendas_valor)
@@ -131,6 +150,8 @@ export async function getDashboardData(
           faturamento_total: consultasValor + tratamentoValor,
           consultas_novas: r.consultas_n,
           tratamentosNovos: r.consultas_ganhas,
+          fechamentosConsulta: r.fechamentos_consulta,
+          fechamentosFollowup: r.fechamentos_followup,
         },
         metas: somarMetas(period, r.metas),
         ultimoSync: s
@@ -164,11 +185,16 @@ async function getDashboardDataLegacy(
   // - consultas novas: quantas são;
   // - tratamentos novos: quantas já estão ganhas (consulta feita e convertida em tratamento).
   // O faturamento em consultas NÃO vem daqui: é calculado pelos agendamentos (faturamentoConsultas).
-  const contagemConsultas = async (): Promise<{ oportunidades: number; ganhas: number }> => {
+  const contagemConsultas = async (): Promise<{
+    oportunidades: number
+    ganhas: number
+    naConsulta: number
+    noFollowup: number
+  }> => {
     const { data, error } = await por(
       supabase
         .from('oportunidades')
-        .select('status')
+        .select('status, estagio_id')
         .eq('pipeline_nome', PIPELINE_FUNIL)
         .in('estagio_id', ETAPAS_CONSULTA_IDS)
         .gte('criado_em', fromIso)
@@ -177,7 +203,12 @@ async function getDashboardDataLegacy(
     )
     if (error) throw new Error(error.message)
     const linhas = (data ?? []) as unknown as OportunidadeConsulta[]
-    return { oportunidades: linhas.length, ganhas: contaGanhas(linhas) }
+    return {
+      oportunidades: linhas.length,
+      ganhas: contaGanhas(linhas),
+      naConsulta: contaGanhasNaEtapa(linhas, ETAPA_CONSULTA_AGENDADA_ID),
+      noFollowup: contaGanhasNaEtapa(linhas, ETAPA_POS_CONSULTA_ID),
+    }
   }
 
   const [
@@ -296,6 +327,8 @@ async function getDashboardDataLegacy(
     faturamento_total: faturamentoDeConsultas + faturamentoTratamentos,
     consultas_novas: consultasContagem.oportunidades,
     tratamentosNovos: consultasContagem.ganhas,
+    fechamentosConsulta: consultasContagem.naConsulta,
+    fechamentosFollowup: consultasContagem.noFollowup,
   }
 
   const metas = somarMetas(period, metasRes.data ?? [])

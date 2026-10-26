@@ -8,16 +8,15 @@ export const GHL_FIELD_INICIO_TRATAMENTO_ID =
   process.env.GHL_FIELD_INICIO_TRATAMENTO_ID ?? 'gs5tLZ5CXwb1HjXFBsyy'
 
 // Etapas do pipeline do funil em que a consulta já está marcada ou feita: "Consulta  Agendada" e
-// "Pós consulta" (ids da location piloto; o nome no GHL tem dois espaços). O faturamento em
-// consultas soma o valor das oportunidades nessas etapas. Sobrescreva por GHL_ETAPAS_CONSULTA_IDS
-// (ids separados por vírgula) ao subir outra clínica.
-export const ETAPAS_CONSULTA_IDS = (
-  process.env.GHL_ETAPAS_CONSULTA_IDS?.trim() ||
-  '68bce141-2351-477d-9b92-1fc3cf846650,aed1d454-d7e3-45d5-8d81-ead7f452c3b8'
-)
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean)
+// "Pós consulta" (ids da location piloto; o nome no GHL tem dois espaços). Consultas novas e
+// tratamentos novos contam as oportunidades nas duas; Fechamentos em consulta e Fechamentos em
+// follow up contam as ganhas de cada uma. Sobrescreva por GHL_ETAPA_CONSULTA_AGENDADA_ID e
+// GHL_ETAPA_POS_CONSULTA_ID ao subir outra clínica.
+export const ETAPA_CONSULTA_AGENDADA_ID =
+  process.env.GHL_ETAPA_CONSULTA_AGENDADA_ID?.trim() || '68bce141-2351-477d-9b92-1fc3cf846650'
+export const ETAPA_POS_CONSULTA_ID =
+  process.env.GHL_ETAPA_POS_CONSULTA_ID?.trim() || 'aed1d454-d7e3-45d5-8d81-ead7f452c3b8'
+export const ETAPAS_CONSULTA_IDS = [ETAPA_CONSULTA_AGENDADA_ID, ETAPA_POS_CONSULTA_ID]
 
 // Valor de cada consulta no faturamento em consultas: R$ 160 quando agendada e R$ 320 quando
 // comparecida (o valor de comparecida substitui o de agendada). Sobrescreva por

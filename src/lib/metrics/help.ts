@@ -23,6 +23,10 @@ export const METRIC_HELP: Record<MetricKey, string> = {
 export const EXTRA_HELP = {
   tratamentosNovos:
     'Oportunidades criadas no período que passaram pela etapa de consulta (Consulta Agendada ou Pós consulta) e estão marcadas como ganhas: consulta feita e convertida em tratamento.',
+  fechamentosConsulta:
+    'Oportunidades do pipeline Qualificação (IA) criadas no período que estão marcadas como ganhas e na etapa Consulta Agendada.',
+  fechamentosFollowup:
+    'Oportunidades do pipeline Qualificação (IA) criadas no período que estão marcadas como ganhas e na etapa Pós consulta (follow up).',
   metaFaturamento:
     'Quanto do faturamento total já foi feito em relação à meta cadastrada para o período.',
   qualificacao: 'Leads qualificados divididos pelos leads. Mostra quantos leads viram MQL.',

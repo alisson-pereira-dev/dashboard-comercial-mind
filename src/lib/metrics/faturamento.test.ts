@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { contaGanhas, faturamentoConsultas } from './faturamento'
+import { contaGanhas, contaGanhasNaEtapa, faturamentoConsultas } from './faturamento'
 
 const V = { agendada: 160, comparecida: 320 }
 
@@ -42,5 +42,30 @@ describe('contaGanhas', () => {
   it('sem status ou lista vazia, zero', () => {
     expect(contaGanhas([{}])).toBe(0)
     expect(contaGanhas([])).toBe(0)
+  })
+})
+
+describe('contaGanhasNaEtapa', () => {
+  const ops = [
+    { status: 'ganha', estagio_id: 'agendada' },
+    { status: 'ganha', estagio_id: 'agendada' },
+    { status: 'aberta', estagio_id: 'agendada' },
+    { status: 'perdida', estagio_id: 'agendada' },
+    { status: 'ganha', estagio_id: 'pos' },
+    { status: 'aberta', estagio_id: 'pos' },
+    { status: 'ganha', estagio_id: null },
+    { status: 'ganha' },
+  ]
+  it('conta só as ganhas da etapa pedida', () => {
+    expect(contaGanhasNaEtapa(ops, 'agendada')).toBe(2)
+    expect(contaGanhasNaEtapa(ops, 'pos')).toBe(1)
+  })
+  it('as duas etapas somam os tratamentos novos', () => {
+    const nasEtapas = ops.filter((o) => o.estagio_id === 'agendada' || o.estagio_id === 'pos')
+    expect(contaGanhasNaEtapa(ops, 'agendada') + contaGanhasNaEtapa(ops, 'pos')).toBe(contaGanhas(nasEtapas))
+  })
+  it('etapa desconhecida ou lista vazia, zero', () => {
+    expect(contaGanhasNaEtapa(ops, 'outra')).toBe(0)
+    expect(contaGanhasNaEtapa([], 'agendada')).toBe(0)
   })
 })

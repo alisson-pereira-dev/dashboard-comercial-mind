@@ -1,6 +1,16 @@
 import { Suspense } from 'react'
 import { connection } from 'next/server'
-import { BarChart3, CalendarDays, CalendarPlus, FilePlus2, FileText, Filter, Users } from 'lucide-react'
+import {
+  BarChart3,
+  CalendarCheck,
+  CalendarDays,
+  CalendarPlus,
+  FilePlus2,
+  FileText,
+  Filter,
+  MessageCircleReply,
+  Users,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardData, getVendedores } from '@/lib/dashboard/queries'
 import type { DashboardData } from '@/lib/dashboard/queries'
@@ -486,6 +496,18 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
             label="Tratamentos novos"
             info={EXTRA_HELP.tratamentosNovos}
             value={b.tratamentosNovos}
+          />
+          <CountCard
+            icon={CalendarCheck}
+            label="Fechamentos em consulta"
+            info={EXTRA_HELP.fechamentosConsulta}
+            value={b.fechamentosConsulta}
+          />
+          <CountCard
+            icon={MessageCircleReply}
+            label="Fechamentos em follow up"
+            info={EXTRA_HELP.fechamentosFollowup}
+            value={b.fechamentosFollowup}
           />
         </div>
       </section>
