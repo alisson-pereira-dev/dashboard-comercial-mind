@@ -31,7 +31,10 @@ export type OportunidadeRow = {
   status: 'aberta' | 'ganha' | 'perdida'
   mql: boolean
   criado_em: string
+  /** Quando o status virou ganha ou perdida (lastStatusChangeAt do GHL); null enquanto aberta. */
   fechado_em: string | null
+  /** Última mudança de etapa no pipeline (lastStageChangeAt do GHL). */
+  etapa_alterada_em: string | null
   responsavel_id: string | null
   responsavel_padrao: boolean
   atualizado_em_ghl: string | null
@@ -166,6 +169,7 @@ export function mapOpportunity(raw: Raw, ctx: OpportunityContext): OportunidadeR
     mql: isMql(raw),
     criado_em: criado,
     fechado_em: status === 'aberta' ? null : iso(raw.lastStatusChangeAt),
+    etapa_alterada_em: iso(raw.lastStageChangeAt),
     ...resolveOwner(raw.assignedTo),
     atualizado_em_ghl: iso(raw.updatedAt),
   }

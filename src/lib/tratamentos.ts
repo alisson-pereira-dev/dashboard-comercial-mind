@@ -1,22 +1,22 @@
-// Lista das oportunidades que formam o cartão "Em tratamentos": quem é o paciente, quando a oportunidade
-// foi criada, quando foi fechada e quanto vale. Montada com a MESMA regra do cartão (oportunidades ganhas do
-// pipeline do funil criadas no período), então a soma dos valores é igual ao cartão.
+// Lista das oportunidades que formam o cartão "Em tratamentos": quem é o paciente, quando foi marcada como
+// ganha, quando foi criada e quanto vale. Montada com a MESMA regra do cartão (oportunidades ganhas do
+// pipeline do funil, pela data em que foram marcadas como ganhas), então a soma dos valores é igual ao cartão.
 
 export type OportunidadeRow = {
   id: string
   contato_id: string | null
   valor: number | string | null
   criado_em: string
-  fechado_em: string | null
+  fechado_em: string
 }
 
 export type TratamentoLinha = {
   id: string
   paciente: string
-  /** Quando a oportunidade foi criada (é essa data que define o período). */
+  /** Quando a oportunidade foi criada (informativo). */
   criadoEm: string
-  /** Quando foi marcada como ganha, se o GHL informou. */
-  fechadoEm: string | null
+  /** Quando foi marcada como ganha (é essa data que define o período). */
+  fechadoEm: string
   valor: number
 }
 
@@ -35,6 +35,6 @@ export function montarTratamentos(
         valor: Number(o.valor ?? 0),
       }
     })
-    .sort((x, y) => x.criadoEm.localeCompare(y.criadoEm))
+    .sort((x, y) => x.fechadoEm.localeCompare(y.fechadoEm))
   return { tratamentos, total: tratamentos.reduce((acc, t) => acc + t.valor, 0) }
 }

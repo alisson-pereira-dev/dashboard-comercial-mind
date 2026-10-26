@@ -6,19 +6,15 @@ import {
   PIPELINE_FUNIL,
   VALOR_CONSULTA,
 } from '@/lib/ghl/config'
-import {
-  contaGanhas,
-  contaGanhasNaEtapa,
-  faturamentoConsultas,
-  type OportunidadeConsulta,
-} from '@/lib/metrics/faturamento'
+import { faturamentoConsultas } from '@/lib/metrics/faturamento'
 import { METRIC_KEYS, type MetricKey, type Period } from '@/lib/metrics'
 
 export type Realizado = Record<MetricKey, number> & {
+  /** Ganhas (no período) que estão nas etapas Consulta Agendada ou Pós consulta. */
   tratamentosNovos: number
-  /** Ganhas que estão na etapa "Consulta Agendada" (criadas no período). */
+  /** Ganhas (no período) que estão na etapa "Consulta Agendada". */
   fechamentosConsulta: number
-  /** Ganhas que estão na etapa "Pós consulta" (criadas no período). */
+  /** Ganhas (no período) que estão na etapa "Pós consulta". */
   fechamentosFollowup: number
 }
 
@@ -39,13 +35,18 @@ export type DashboardData = {
   atribuicaoPadrao: { leads: number; vendas: number }
 }
 
-async function count(
-  query: PromiseLike<{ count: number | null; error: { message: string } | null }>,
-): Promise<number> {
-  const { count: n, error } = await query
-  if (error) throw new Error(error.message)
-  return n ?? 0
+// O banco não tem a função dashboard_resumo na versão que o app espera: as migrations em
+// supabase/migrations ainda não foram todas rodadas. Em vez de mostrar números pela regra antiga, a tela
+// avisa.
+export class BancoDesatualizadoError extends Error {
+  constructor() {
+    super('O banco de dados está desatualizado: rode as migrations em supabase/migrations.')
+    this.name = 'BancoDesatualizadoError'
+  }
 }
+
+// Versão da função dashboard_resumo que este código espera (migration 20261026000002).
+const VERSAO_FUNCAO = 2
 
 export type Vendedor = { id: string; nome: string }
 
@@ -90,8 +91,9 @@ function somarMetas(period: Period, rows: MetaRow[]): Record<MetricKey, number |
   return metas
 }
 
-// Resposta da função dashboard_resumo (supabase/migrations/20261023000002).
+// Resposta da função dashboard_resumo (supabase/migrations/20261026000002).
 type Resumo = {
+  versao: number
   leads: number
   leads_qualificados: number
   consultas_agendadas: number
@@ -110,241 +112,55 @@ type Resumo = {
   ultimo_sync_ok: string | null
 }
 
-// Se a função não existe no banco, não vale tentar de novo a cada pedido: lembra por alguns minutos.
-let semFuncaoAte = 0
-const SEM_FUNCAO_MS = 5 * 60 * 1000
-
 // vendedorId = null mostra a clínica toda e usa as metas gerais (usuario_id = 'clinica').
-// Uma única ida ao banco (função dashboard_resumo); sem ela, cai no caminho antigo.
+// Uma única ida ao banco (função dashboard_resumo), que aplica a base de data de cada etapa:
+// leads e qualificados pelo "criado em"; consultas agendadas pela última mudança de etapa; comparecimentos
+// pela atualização do agendamento; vendas pela data em que foram marcadas como ganhas.
 export async function getDashboardData(
   supabase: SupabaseClient,
   period: Period,
   vendedorId: string | null = null,
 ): Promise<DashboardData> {
-  if (Date.now() >= semFuncaoAte) {
-    const { data, error } = await supabase.rpc('dashboard_resumo', {
-      p_inicio: period.fromIso,
-      p_fim: period.toIso,
-      p_vendedor: vendedorId,
-      p_pipeline: PIPELINE_FUNIL,
-      p_etapas: ETAPAS_CONSULTA_IDS,
-      p_etapa_consulta: ETAPA_CONSULTA_AGENDADA_ID,
-      p_etapa_followup: ETAPA_POS_CONSULTA_ID,
-      p_meses: period.metaPesos.map((p) => p.mes),
-    })
-    // Versão antiga da função (sem vendas_valor ou sem os fechamentos): usa o caminho antigo.
-    if (!error && data && 'vendas_valor' in (data as object) && 'fechamentos_consulta' in (data as object)) {
-      const r = data as Resumo
-      const consultasValor = faturamentoConsultas(r.consultas_agendadas, r.comparecimentos, VALOR_CONSULTA)
-      const tratamentoValor = Number(r.vendas_valor)
-      const s = r.ultimo_sync
-      return {
-        realizado: {
-          leads: r.leads,
-          leads_qualificados: r.leads_qualificados,
-          consultas_agendadas: r.consultas_agendadas,
-          comparecimentos: r.comparecimentos,
-          vendas: r.vendas,
-          faturamento_consultas: consultasValor,
-          faturamento_tratamentos: tratamentoValor,
-          faturamento_total: consultasValor + tratamentoValor,
-          consultas_novas: r.consultas_n,
-          tratamentosNovos: r.consultas_ganhas,
-          fechamentosConsulta: r.fechamentos_consulta,
-          fechamentosFollowup: r.fechamentos_followup,
-        },
-        metas: somarMetas(period, r.metas),
-        ultimoSync: s
-          ? { status: s.status, iniciadoEm: s.iniciado_em, finalizadoEm: s.finalizado_em, erro: s.erro }
-          : null,
-        ultimoSyncOk: r.ultimo_sync_ok,
-        temDados: r.tem_dados,
-        atribuicaoPadrao: { leads: r.leads_padrao, vendas: r.vendas_padrao },
-      }
-    }
-    // PGRST202 = função não encontrada: migration ainda não rodada.
-    if (error?.code === 'PGRST202') semFuncaoAte = Date.now() + SEM_FUNCAO_MS
-  }
-  return getDashboardDataLegacy(supabase, period, vendedorId)
-}
+  const { data, error } = await supabase.rpc('dashboard_resumo', {
+    p_inicio: period.fromIso,
+    p_fim: period.toIso,
+    p_vendedor: vendedorId,
+    p_pipeline: PIPELINE_FUNIL,
+    p_etapas: ETAPAS_CONSULTA_IDS,
+    p_etapa_consulta: ETAPA_CONSULTA_AGENDADA_ID,
+    p_etapa_followup: ETAPA_POS_CONSULTA_ID,
+    p_meses: period.metaPesos.map((p) => p.mes),
+  })
+  // PGRST202 = função com esses argumentos não encontrada: migrations por rodar.
+  if (error?.code === 'PGRST202') throw new BancoDesatualizadoError()
+  if (error) throw new Error(error.message)
+  const r = data as Resumo | null
+  if (!r || r.versao !== VERSAO_FUNCAO) throw new BancoDesatualizadoError()
 
-// Caminho antigo: cerca de 13 consultas separadas por período. Fica como reserva para quando a função
-// dashboard_resumo ainda não existe no banco (migration por rodar). Mesmas regras da função.
-async function getDashboardDataLegacy(
-  supabase: SupabaseClient,
-  period: Period,
-  vendedorId: string | null = null,
-): Promise<DashboardData> {
-  const { fromIso, toIso } = period
-  const head = { count: 'exact', head: true } as const
-  // O tipo do builder do Supabase é profundo demais para um genérico com restrição.
-  const por = <T,>(q: T): T =>
-    vendedorId ? (q as unknown as { eq(c: string, v: string): T }).eq('responsavel_id', vendedorId) : q
-
-  // Oportunidades criadas no período que estão nas etapas de consulta do pipeline do funil. Dela saem:
-  // - consultas novas: quantas são;
-  // - tratamentos novos: quantas já estão ganhas (consulta feita e convertida em tratamento).
-  // O faturamento em consultas NÃO vem daqui: é calculado pelos agendamentos (faturamentoConsultas).
-  const contagemConsultas = async (): Promise<{
-    oportunidades: number
-    ganhas: number
-    naConsulta: number
-    noFollowup: number
-  }> => {
-    const { data, error } = await por(
-      supabase
-        .from('oportunidades')
-        .select('status, estagio_id')
-        .eq('pipeline_nome', PIPELINE_FUNIL)
-        .in('estagio_id', ETAPAS_CONSULTA_IDS)
-        .gte('criado_em', fromIso)
-        .lt('criado_em', toIso)
-        .limit(5000),
-    )
-    if (error) throw new Error(error.message)
-    const linhas = (data ?? []) as unknown as OportunidadeConsulta[]
-    return {
-      oportunidades: linhas.length,
-      ganhas: contaGanhas(linhas),
-      naConsulta: contaGanhasNaEtapa(linhas, ETAPA_CONSULTA_AGENDADA_ID),
-      noFollowup: contaGanhasNaEtapa(linhas, ETAPA_POS_CONSULTA_ID),
-    }
-  }
-
-  const [
-    leads,
-    qualificados,
-    agendadas,
-    comparecimentos,
-    vendasRes,
-    consultasContagem,
-    metasRes,
-    syncRes,
-    okRes,
-    totalContatos,
-    leadsPadrao,
-  ] = await Promise.all([
-      count(
-        por(
-          supabase
-            .from('oportunidades')
-            .select('id', head)
-            .eq('pipeline_nome', PIPELINE_FUNIL)
-            .gte('criado_em', fromIso)
-            .lt('criado_em', toIso),
-        ),
-      ),
-      count(
-        por(
-          supabase
-            .from('oportunidades')
-            .select('id', head)
-            .eq('mql', true)
-            .eq('pipeline_nome', PIPELINE_FUNIL)
-            .gte('criado_em', fromIso)
-            .lt('criado_em', toIso),
-        ),
-      ),
-      count(
-        por(
-          supabase
-            .from('agendamentos')
-            .select('id', head)
-            .neq('status', 'cancelado')
-            .gte('criado_em', fromIso)
-            .lt('criado_em', toIso),
-        ),
-      ),
-      count(
-        por(
-          supabase
-            .from('agendamentos')
-            .select('id', head)
-            .eq('status', 'compareceu')
-            .gte('criado_em', fromIso)
-            .lt('criado_em', toIso),
-        ),
-      ),
-      por(
-        supabase
-          .from('oportunidades')
-          .select('valor, responsavel_padrao')
-          .eq('status', 'ganha')
-          .eq('pipeline_nome', PIPELINE_FUNIL)
-          .gte('criado_em', fromIso)
-          .lt('criado_em', toIso)
-          .limit(5000),
-      ),
-      contagemConsultas(),
-      supabase
-        .from('metas')
-        .select('metrica, valor, mes_referencia')
-        .eq('usuario_id', vendedorId ?? 'clinica')
-        .in('mes_referencia', period.metaPesos.map((p) => p.mes)),
-      supabase
-        .from('sync_runs')
-        .select('status, iniciado_em, finalizado_em, erro')
-        .order('iniciado_em', { ascending: false })
-        .limit(1),
-      supabase
-        .from('sync_runs')
-        .select('finalizado_em')
-        .eq('status', 'ok')
-        .order('finalizado_em', { ascending: false })
-        .limit(1),
-      count(supabase.from('contatos').select('id', head)),
-      vendedorId
-        ? count(
-            supabase
-              .from('oportunidades')
-              .select('id', head)
-              .eq('pipeline_nome', PIPELINE_FUNIL)
-              .eq('responsavel_id', vendedorId)
-              .eq('responsavel_padrao', true)
-              .gte('criado_em', fromIso)
-              .lt('criado_em', toIso),
-          )
-        : Promise.resolve(0),
-  ])
-
-  if (vendasRes.error) throw new Error(vendasRes.error.message)
-  if (metasRes.error) throw new Error(metasRes.error.message)
-
-  const vendas = vendasRes.data ?? []
-  // Em tratamentos: valor das oportunidades ganhas do período (as mesmas das vendas).
-  const faturamentoTratamentos = vendas.reduce((acc, v) => acc + Number(v.valor), 0)
-
-  const faturamentoDeConsultas = faturamentoConsultas(agendadas, comparecimentos, VALOR_CONSULTA)
-
-  const realizado: Realizado = {
-    leads,
-    leads_qualificados: qualificados,
-    consultas_agendadas: agendadas,
-    comparecimentos,
-    vendas: vendas.length,
-    faturamento_consultas: faturamentoDeConsultas,
-    faturamento_tratamentos: faturamentoTratamentos,
-    faturamento_total: faturamentoDeConsultas + faturamentoTratamentos,
-    consultas_novas: consultasContagem.oportunidades,
-    tratamentosNovos: consultasContagem.ganhas,
-    fechamentosConsulta: consultasContagem.naConsulta,
-    fechamentosFollowup: consultasContagem.noFollowup,
-  }
-
-  const metas = somarMetas(period, metasRes.data ?? [])
-
-  const s = syncRes.data?.[0]
+  const consultasValor = faturamentoConsultas(r.consultas_agendadas, r.comparecimentos, VALOR_CONSULTA)
+  const tratamentoValor = Number(r.vendas_valor)
+  const s = r.ultimo_sync
   return {
-    realizado,
-    metas,
+    realizado: {
+      leads: r.leads,
+      leads_qualificados: r.leads_qualificados,
+      consultas_agendadas: r.consultas_agendadas,
+      comparecimentos: r.comparecimentos,
+      vendas: r.vendas,
+      faturamento_consultas: consultasValor,
+      faturamento_tratamentos: tratamentoValor,
+      faturamento_total: consultasValor + tratamentoValor,
+      consultas_novas: r.consultas_n,
+      tratamentosNovos: r.consultas_ganhas,
+      fechamentosConsulta: r.fechamentos_consulta,
+      fechamentosFollowup: r.fechamentos_followup,
+    },
+    metas: somarMetas(period, r.metas),
     ultimoSync: s
       ? { status: s.status, iniciadoEm: s.iniciado_em, finalizadoEm: s.finalizado_em, erro: s.erro }
       : null,
-    ultimoSyncOk: okRes.data?.[0]?.finalizado_em ?? null,
-    temDados: totalContatos > 0,
-    atribuicaoPadrao: {
-      leads: leadsPadrao,
-      vendas: vendas.filter((v) => v.responsavel_padrao).length,
-    },
+    ultimoSyncOk: r.ultimo_sync_ok,
+    temDados: r.tem_dados,
+    atribuicaoPadrao: { leads: r.leads_padrao, vendas: r.vendas_padrao },
   }
 }

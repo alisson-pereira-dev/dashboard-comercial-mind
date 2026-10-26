@@ -4,6 +4,7 @@ import { parsePeriod } from '@/lib/metrics/period'
 
 // Saída real da função dashboard_resumo (out/2026, clínica toda), tirada de uma cópia dos dados.
 const RESUMO = {
+  versao: 2,
   leads: 121,
   leads_qualificados: 8,
   consultas_agendadas: 2,
@@ -144,61 +145,38 @@ describe('getDashboardData com a função dashboard_resumo', () => {
   })
 })
 
-describe('getDashboardData com a função desatualizada', () => {
-  it('versão da função sem os fechamentos usa o caminho antigo, em vez de mostrar zero', async () => {
-    const { fechamentos_consulta: _a, fechamentos_followup: _b, ...antiga } = RESUMO
-    void _a
-    void _b
+describe('getDashboardData com o banco desatualizado', () => {
+  it('versão anterior da função (sem "versao") não vira número pela regra antiga: avisa', async () => {
+    const { versao: _removida, ...antiga } = RESUMO
+    void _removida
     const rpc = vi.fn().mockResolvedValue({ data: antiga, error: null })
-    const from = vi.fn(() => {
-      throw new Error('caminho-antigo-chamado')
-    })
     const getDashboardData = await carregar()
-    await expect(getDashboardData({ rpc, from } as unknown as SupabaseClient, periodo, null)).rejects.toThrow(
-      'caminho-antigo-chamado',
-    )
+    await expect(getDashboardData({ rpc } as unknown as SupabaseClient, periodo, null)).rejects.toMatchObject({
+      name: 'BancoDesatualizadoError',
+    })
   })
 
-  it('versão antiga da função (sem vendas_valor) usa o caminho antigo, em vez de mostrar tratamentos zerado', async () => {
-    const { vendas_valor: _removido, ...antiga } = RESUMO
-    void _removido
-    const rpc = vi.fn().mockResolvedValue({ data: antiga, error: null })
-    const from = vi.fn(() => {
-      throw new Error('caminho-antigo-chamado')
-    })
+  it('versão de função diferente da esperada também avisa', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { ...RESUMO, versao: 1 }, error: null })
     const getDashboardData = await carregar()
-    await expect(getDashboardData({ rpc, from } as unknown as SupabaseClient, periodo, null)).rejects.toThrow(
-      'caminho-antigo-chamado',
-    )
+    await expect(getDashboardData({ rpc } as unknown as SupabaseClient, periodo, null)).rejects.toMatchObject({
+      name: 'BancoDesatualizadoError',
+    })
   })
-})
 
-describe('getDashboardData sem a função no banco (migration por rodar)', () => {
-  it('cai no caminho antigo e não insiste na função por alguns minutos', async () => {
+  it('função não encontrada (PGRST202, migration por rodar) avisa que o banco está desatualizado', async () => {
     const rpc = vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST202', message: 'função não encontrada' } })
-    const from = vi.fn(() => {
-      throw new Error('caminho-antigo-chamado')
-    })
     const getDashboardData = await carregar()
-    const supabase = { rpc, from } as unknown as SupabaseClient
-
-    await expect(getDashboardData(supabase, periodo, null)).rejects.toThrow('caminho-antigo-chamado')
-    expect(rpc).toHaveBeenCalledTimes(1)
-
-    // Segunda chamada: não tenta a função de novo.
-    await expect(getDashboardData(supabase, periodo, null)).rejects.toThrow('caminho-antigo-chamado')
-    expect(rpc).toHaveBeenCalledTimes(1)
+    await expect(getDashboardData({ rpc } as unknown as SupabaseClient, periodo, null)).rejects.toMatchObject({
+      name: 'BancoDesatualizadoError',
+    })
   })
 
-  it('outro erro da função também cai no caminho antigo, mas tenta a função de novo na próxima', async () => {
+  it('outro erro do banco vira erro comum, sem o aviso de migration', async () => {
     const rpc = vi.fn().mockResolvedValue({ data: null, error: { code: '57014', message: 'timeout' } })
-    const from = vi.fn(() => {
-      throw new Error('caminho-antigo-chamado')
-    })
     const getDashboardData = await carregar()
-    const supabase = { rpc, from } as unknown as SupabaseClient
-    await expect(getDashboardData(supabase, periodo, null)).rejects.toThrow('caminho-antigo-chamado')
-    await expect(getDashboardData(supabase, periodo, null)).rejects.toThrow('caminho-antigo-chamado')
-    expect(rpc).toHaveBeenCalledTimes(2)
+    const p = getDashboardData({ rpc } as unknown as SupabaseClient, periodo, null)
+    await expect(p).rejects.toThrow('timeout')
+    await expect(p).rejects.not.toMatchObject({ name: 'BancoDesatualizadoError' })
   })
 })

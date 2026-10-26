@@ -1,32 +1,15 @@
-// Faturamento em consultas (regra de 23/10/2026), calculado pelos agendamentos do calendário:
-// cada consulta agendada vale um valor fixo (R$ 160) e, quando é marcada como comparecida, a
-// consulta passa a valer outro (R$ 320). O valor de comparecida SUBSTITUI o de agendada, não soma.
-//   Em consultas = (agendadas não comparecidas x 160) + (comparecidas x 320)
+// Faturamento em consultas (regras de 23 e 26/10/2026): cada consulta agendada vale um valor fixo
+// (R$ 160) e, quando é marcada como comparecida, passa a valer outro (R$ 320). O valor de comparecida
+// SUBSTITUI o de agendada, não soma.
+//   Em consultas = (agendadas - comparecidas) x 160 + comparecidas x 320
+// Desde 26/10/2026 as agendadas são as oportunidades na etapa Consulta Agendada e as comparecidas são
+// agendamentos do calendário (fontes diferentes, cada uma com a sua data), então comparecidas pode passar
+// de agendadas, por exemplo quando o lead já saiu da etapa Consulta Agendada. A fórmula vale do mesmo
+// jeito (equivale a agendadas x 160 + comparecidas x 160) e não é limitada.
 export type ValoresConsulta = { agendada: number; comparecida: number }
 
 export function faturamentoConsultas(agendadas: number, comparecidas: number, valores: ValoresConsulta): number {
-  const total = Math.max(agendadas, 0)
-  // Comparecida é uma agendada que mudou de status, então nunca passa do total de agendadas.
-  const comparecidasValidas = Math.min(Math.max(comparecidas, 0), total)
-  return (total - comparecidasValidas) * valores.agendada + comparecidasValidas * valores.comparecida
-}
-
-// Valor de UMA consulta: R$ 320 se compareceu, R$ 160 nas demais (agendada ou que faltou).
-// A soma deste valor sobre as consultas do período é igual a faturamentoConsultas.
-export function valorDaConsulta(status: string, valores: ValoresConsulta): number {
-  return status === 'compareceu' ? valores.comparecida : valores.agendada
-}
-
-// Quantas das oportunidades estão ganhas (status "ganha"): os tratamentos novos.
-export type OportunidadeConsulta = { status?: string; estagio_id?: string | null }
-
-export function contaGanhas(oportunidades: OportunidadeConsulta[]): number {
-  return oportunidades.filter((o) => o.status === 'ganha').length
-}
-
-// Quantas das oportunidades estão ganhas E na etapa informada (a etapa em que ficaram no pipeline).
-// Fechamentos em consulta = ganhas em "Consulta Agendada"; Fechamentos em follow up = ganhas em
-// "Pós consulta". As duas somam os tratamentos novos (contaGanhas sobre as duas etapas).
-export function contaGanhasNaEtapa(oportunidades: OportunidadeConsulta[], etapaId: string): number {
-  return oportunidades.filter((o) => o.status === 'ganha' && o.estagio_id === etapaId).length
+  const a = Math.max(agendadas, 0)
+  const c = Math.max(comparecidas, 0)
+  return (a - c) * valores.agendada + c * valores.comparecida
 }

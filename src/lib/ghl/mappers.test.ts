@@ -82,6 +82,7 @@ describe('mapOpportunity', () => {
     monetaryValue: 1500,
     createdAt: '2026-10-01T10:00:00.000Z',
     lastStatusChangeAt: '2026-10-10T10:00:00.000Z',
+    lastStageChangeAt: '2026-10-05T10:00:00.000Z',
   }
   it('mapeia venda ganha como consulta quando o contato não tem início de tratamento', () => {
     const row = mapOpportunity(base, ctx)
@@ -91,7 +92,11 @@ describe('mapOpportunity', () => {
       valor: 1500,
       pipeline_nome: 'Qualificação ( IA )',
       fechado_em: '2026-10-10T10:00:00.000Z',
+      etapa_alterada_em: '2026-10-05T10:00:00.000Z',
     })
+  })
+  it('etapa_alterada_em vem da última mudança de etapa e fica vazia quando o GHL não informa', () => {
+    expect(mapOpportunity({ ...base, lastStageChangeAt: undefined }, ctx)?.etapa_alterada_em).toBeNull()
   })
   it('mapeia como tratamento quando o contato tem início de tratamento', () => {
     expect(mapOpportunity({ ...base, contactId: 'c-trat' }, ctx)?.tipo).toBe('tratamento')

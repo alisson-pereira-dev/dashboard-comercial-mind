@@ -6,14 +6,13 @@ import { listarConsultas, type ConsultasResultado } from '@/lib/consultas-action
 import { DetalheJanela } from '@/components/detalhe-janela'
 
 const SITUACAO = {
-  agendado: { texto: 'Agendada', classe: 'bg-brand-50 text-brand-ink' },
-  compareceu: { texto: 'Compareceu', classe: 'bg-emerald-100 text-emerald-800' },
-  nao_compareceu: { texto: 'Não compareceu', classe: 'bg-red-100 text-red-800' },
+  agendada: { texto: 'Agendada', classe: 'bg-brand-50 text-brand-ink' },
+  compareceu: { texto: 'Compareceu (+R$ 160)', classe: 'bg-emerald-100 text-emerald-800' },
 } as const
 
 type Dados = Extract<ConsultasResultado, { ok: true }>
 
-// Lista das consultas que formam o cartão "Em consultas".
+// Lista das linhas que formam o cartão "Em consultas".
 export function ConsultasDetalhe({
   children,
   inicio,
@@ -30,9 +29,9 @@ export function ConsultasDetalhe({
   return (
     <DetalheJanela<Dados>
       titulo={`Consultas de ${periodo}`}
-      descricao='São as consultas que formam o valor de "Em consultas". Agendadas valem R$ 160 e, quando comparecem, R$ 320 (no lugar dos 160). Canceladas não entram.'
-      nota='O período vale pela data em que o agendamento foi criado (coluna "Agendada em"), e não pela data da consulta. Só entram consultas registradas no calendário do GHL.'
-      textoVazio="Nenhuma consulta agendada neste período."
+      descricao='São as linhas que formam o valor de "Em consultas": cada oportunidade que entrou na etapa Consulta Agendada vale R$ 160, e cada comparecimento marcado no período acrescenta R$ 160 (a consulta passa a valer R$ 320, no lugar dos 160).'
+      nota='O período vale pela data em que a oportunidade mudou para a etapa Consulta Agendada e pela data em que o agendamento foi marcado como compareceu. Só aparecem oportunidades que ainda estão na etapa Consulta Agendada.'
+      textoVazio="Nenhuma oportunidade entrou na etapa Consulta Agendada e nenhum comparecimento foi marcado neste período."
       carregar={async () => {
         const r = await listarConsultas({ inicio, fim, vendedorId })
         return r.ok ? { ok: true, dados: r } : r
@@ -43,9 +42,8 @@ export function ConsultasDetalhe({
           <thead>
             <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
               <th scope="col" className="py-2 pr-3 font-semibold">Paciente</th>
-              <th scope="col" className="py-2 pr-3 font-semibold">Consulta (data e hora)</th>
-              <th scope="col" className="hidden py-2 pr-3 font-semibold sm:table-cell">Agendada em</th>
               <th scope="col" className="hidden py-2 pr-3 font-semibold sm:table-cell">Situação</th>
+              <th scope="col" className="py-2 pr-3 font-semibold">Data</th>
               <th scope="col" className="py-2 text-right font-semibold">Valor</th>
             </tr>
           </thead>
@@ -55,21 +53,23 @@ export function ConsultasDetalhe({
                 <td className="py-2.5 pr-3 font-medium">
                   {c.paciente}
                   <span
-                    className={`mt-1 flex w-fit rounded-full px-2 py-0.5 text-xs font-semibold sm:hidden ${SITUACAO[c.status].classe}`}
+                    className={`mt-1 flex w-fit rounded-full px-2 py-0.5 text-xs font-semibold sm:hidden ${SITUACAO[c.tipo].classe}`}
                   >
-                    {SITUACAO[c.status].texto}
+                    {SITUACAO[c.tipo].texto}
                   </span>
-                </td>
-                <td className="py-2.5 pr-3 tabular-nums">{formatDateTime(c.inicio)}</td>
-                <td className="hidden py-2.5 pr-3 tabular-nums text-muted sm:table-cell">
-                  {formatDateTime(c.criadoEm)}
                 </td>
                 <td className="hidden py-2.5 pr-3 sm:table-cell">
                   <span
-                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${SITUACAO[c.status].classe}`}
+                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${SITUACAO[c.tipo].classe}`}
                   >
-                    {SITUACAO[c.status].texto}
+                    {SITUACAO[c.tipo].texto}
                   </span>
+                </td>
+                <td className="py-2.5 pr-3 tabular-nums">
+                  {formatDateTime(c.data)}
+                  {c.consultaEm ? (
+                    <span className="block text-xs text-muted">Consulta em {formatDateTime(c.consultaEm)}</span>
+                  ) : null}
                 </td>
                 <td className="py-2.5 text-right font-semibold tabular-nums">{formatMoney(c.valor)}</td>
               </tr>
@@ -77,11 +77,11 @@ export function ConsultasDetalhe({
           </tbody>
           <tfoot>
             <tr className="border-t-2 border-border">
-              <td colSpan={2} className="pt-3 text-sm font-semibold">
-                Total ({d.consultas.length} {d.consultas.length === 1 ? 'consulta' : 'consultas'})
+              <td className="pt-3 text-sm font-semibold">
+                Total ({d.consultas.length} {d.consultas.length === 1 ? 'linha' : 'linhas'})
               </td>
               <td className="hidden sm:table-cell" />
-              <td className="hidden sm:table-cell" />
+              <td />
               <td className="pt-3 text-right text-base font-bold tabular-nums">{formatMoney(d.total)}</td>
             </tr>
           </tfoot>

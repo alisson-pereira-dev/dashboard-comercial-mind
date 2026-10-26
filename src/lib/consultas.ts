@@ -1,46 +1,67 @@
-import { valorDaConsulta, type ValoresConsulta } from '@/lib/metrics/faturamento'
+import type { ValoresConsulta } from '@/lib/metrics/faturamento'
 
-// Lista das consultas que formam o cartão "Em consultas": quem é o paciente, quando é a consulta,
-// quando foi agendada, em que situação está e quanto vale. Montada com a MESMA regra do cartão
-// (agendamentos criados no período, sem os cancelados), então a soma dos valores é igual ao cartão.
+// Lista das linhas que formam o cartão "Em consultas" (regra de 26/10/2026). O cartão soma
+//   (agendadas - comparecidas) x R$ 160 + comparecidas x R$ 320  =  agendadas x R$ 160 + comparecidas x R$ 160
+// em que agendadas são as oportunidades na etapa Consulta Agendada (pela data da mudança de etapa) e
+// comparecidas são os agendamentos marcados como "compareceu" (pela data da atualização). Por isso a lista
+// tem dois tipos de linha: cada oportunidade agendada vale R$ 160 e cada comparecimento ACRESCENTA R$ 160
+// (a consulta passa a valer R$ 320 no lugar dos R$ 160). A soma é igual ao cartão.
 
-export type AgendamentoRow = {
+export type OportunidadeAgendada = {
+  id: string
+  contato_id: string | null
+  etapa_alterada_em: string
+}
+
+export type Comparecimento = {
   id: string
   contato_id: string | null
   data_inicio: string
-  criado_em: string
-  status: string
+  atualizado_em_ghl: string
 }
 
 export type ConsultaLinha = {
   id: string
+  tipo: 'agendada' | 'compareceu'
   paciente: string
-  /** Data e hora da consulta. */
-  inicio: string
-  /** Quando o agendamento foi criado (é essa data que define o período). */
-  criadoEm: string
-  status: 'agendado' | 'compareceu' | 'nao_compareceu'
+  /** Data que põe a linha no período: mudança de etapa (agendada) ou marcação do comparecimento. */
+  data: string
+  /** Data e hora da consulta, quando a linha vem de um agendamento do calendário. */
+  consultaEm: string | null
   valor: number
 }
 
 export function montarConsultas(
-  agendamentos: AgendamentoRow[],
+  agendadas: OportunidadeAgendada[],
+  comparecimentos: Comparecimento[],
   nomes: Map<string, string | null>,
   valores: ValoresConsulta,
 ): { consultas: ConsultaLinha[]; total: number } {
-  const consultas = agendamentos
-    .filter((a) => a.status !== 'cancelado')
-    .map((a): ConsultaLinha => {
-      const nome = a.contato_id ? nomes.get(a.contato_id)?.trim() : ''
-      return {
-        id: a.id,
-        paciente: nome || 'Sem nome no GHL',
-        inicio: a.data_inicio,
-        criadoEm: a.criado_em,
-        status: a.status === 'compareceu' || a.status === 'nao_compareceu' ? a.status : 'agendado',
-        valor: valorDaConsulta(a.status, valores),
-      }
-    })
-    .sort((x, y) => x.inicio.localeCompare(y.inicio))
+  const nome = (contatoId: string | null) =>
+    (contatoId ? nomes.get(contatoId)?.trim() : '') || 'Sem nome no GHL'
+
+  const consultas: ConsultaLinha[] = [
+    ...agendadas.map(
+      (o): ConsultaLinha => ({
+        id: `agendada-${o.id}`,
+        tipo: 'agendada',
+        paciente: nome(o.contato_id),
+        data: o.etapa_alterada_em,
+        consultaEm: null,
+        valor: valores.agendada,
+      }),
+    ),
+    ...comparecimentos.map(
+      (a): ConsultaLinha => ({
+        id: `compareceu-${a.id}`,
+        tipo: 'compareceu',
+        paciente: nome(a.contato_id),
+        data: a.atualizado_em_ghl,
+        consultaEm: a.data_inicio,
+        valor: valores.comparecida - valores.agendada,
+      }),
+    ),
+  ].sort((x, y) => x.data.localeCompare(y.data))
+
   return { consultas, total: consultas.reduce((acc, c) => acc + c.valor, 0) }
 }

@@ -30,18 +30,23 @@ async function upsert(admin: SupabaseClient, table: string, rows: unknown[]) {
   if (error) throw new Error(`Falha ao gravar ${table}: ${error.message}`)
 }
 
-// O banco pode estar sem a coluna valor_tratamento (migration ainda não rodada). Nesse caso o sync
-// segue sem ela, em vez de falhar inteiro, e o dashboard avisa que o faturamento em tratamentos
-// está indisponível.
-async function temColunaValorTratamento(admin: SupabaseClient) {
-  const { error } = await admin.from('oportunidades').select('valor_tratamento').limit(1)
-  return !error
+// Colunas de oportunidades criadas por migrations recentes. Se o banco ainda não as tem, o sync segue
+// sem elas, em vez de falhar inteiro (o dashboard avisa que o banco está desatualizado).
+const COLUNAS_OPCIONAIS = ['valor_tratamento', 'etapa_alterada_em'] as const
+
+async function colunasAusentes(admin: SupabaseClient) {
+  const ausentes: string[] = []
+  for (const coluna of COLUNAS_OPCIONAIS) {
+    const { error } = await admin.from('oportunidades').select(coluna).limit(1)
+    if (error) ausentes.push(coluna)
+  }
+  return ausentes
 }
 
-function semValorTratamento(row: OportunidadeRow): Partial<OportunidadeRow> {
-  const copia: Partial<OportunidadeRow> = { ...row }
-  delete copia.valor_tratamento
-  return copia
+function semColunas(row: OportunidadeRow, ausentes: string[]): Partial<OportunidadeRow> {
+  const copia: Record<string, unknown> = { ...row }
+  for (const coluna of ausentes) delete copia[coluna]
+  return copia as Partial<OportunidadeRow>
 }
 
 // Sync completo e idempotente: rodar duas vezes não duplica registros.
@@ -74,17 +79,13 @@ export async function runSync(admin: SupabaseClient): Promise<SyncCounts> {
 
   // Oportunidades
   const ctx = { pipelineNames, contatosComTratamento }
-  const gravaValorTratamento = await temColunaValorTratamento(admin)
+  const ausentes = await colunasAusentes(admin)
   for await (const page of ghlPages<Raw>(
     `/opportunities/search?location_id=${locationId}&limit=100`,
     'opportunities',
   )) {
     const rows = page.map((o) => mapOpportunity(o, ctx)).filter((r): r is OportunidadeRow => r !== null)
-    await upsert(
-      admin,
-      'oportunidades',
-      gravaValorTratamento ? rows : rows.map(semValorTratamento),
-    )
+    await upsert(admin, 'oportunidades', ausentes.length === 0 ? rows : rows.map((r) => semColunas(r, ausentes)))
     counts.oportunidades += rows.length
   }
 

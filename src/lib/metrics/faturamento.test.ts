@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { contaGanhas, contaGanhasNaEtapa, faturamentoConsultas } from './faturamento'
+import { faturamentoConsultas } from './faturamento'
 
 const V = { agendada: 160, comparecida: 320 }
 
@@ -22,8 +22,10 @@ describe('faturamentoConsultas', () => {
   it('sem consultas, zero', () => {
     expect(faturamentoConsultas(0, 0, V)).toBe(0)
   })
-  it('comparecidas nunca passam das agendadas (dado inconsistente não infla o valor)', () => {
-    expect(faturamentoConsultas(2, 5, V)).toBe(2 * 320)
+  it('comparecidas podem passar das agendadas (fontes e datas diferentes) e a fórmula segue valendo', () => {
+    // 0 agendadas na etapa, 1 comparecida: (0 - 1) x 160 + 1 x 320 = 160
+    expect(faturamentoConsultas(0, 1, V)).toBe(160)
+    expect(faturamentoConsultas(2, 5, V)).toBe(2 * 160 + 5 * 160)
   })
   it('valores negativos ou lixo não geram faturamento negativo', () => {
     expect(faturamentoConsultas(-3, 0, V)).toBe(0)
@@ -31,41 +33,5 @@ describe('faturamentoConsultas', () => {
   })
   it('usa os valores informados', () => {
     expect(faturamentoConsultas(2, 1, { agendada: 100, comparecida: 250 })).toBe(100 + 250)
-  })
-})
-
-describe('contaGanhas', () => {
-  it('conta só as oportunidades ganhas (tratamentos novos)', () => {
-    const ops = [{ status: 'aberta' }, { status: 'ganha' }, { status: 'perdida' }, { status: 'ganha' }]
-    expect(contaGanhas(ops)).toBe(2)
-  })
-  it('sem status ou lista vazia, zero', () => {
-    expect(contaGanhas([{}])).toBe(0)
-    expect(contaGanhas([])).toBe(0)
-  })
-})
-
-describe('contaGanhasNaEtapa', () => {
-  const ops = [
-    { status: 'ganha', estagio_id: 'agendada' },
-    { status: 'ganha', estagio_id: 'agendada' },
-    { status: 'aberta', estagio_id: 'agendada' },
-    { status: 'perdida', estagio_id: 'agendada' },
-    { status: 'ganha', estagio_id: 'pos' },
-    { status: 'aberta', estagio_id: 'pos' },
-    { status: 'ganha', estagio_id: null },
-    { status: 'ganha' },
-  ]
-  it('conta só as ganhas da etapa pedida', () => {
-    expect(contaGanhasNaEtapa(ops, 'agendada')).toBe(2)
-    expect(contaGanhasNaEtapa(ops, 'pos')).toBe(1)
-  })
-  it('as duas etapas somam os tratamentos novos', () => {
-    const nasEtapas = ops.filter((o) => o.estagio_id === 'agendada' || o.estagio_id === 'pos')
-    expect(contaGanhasNaEtapa(ops, 'agendada') + contaGanhasNaEtapa(ops, 'pos')).toBe(contaGanhas(nasEtapas))
-  })
-  it('etapa desconhecida ou lista vazia, zero', () => {
-    expect(contaGanhasNaEtapa(ops, 'outra')).toBe(0)
-    expect(contaGanhasNaEtapa([], 'agendada')).toBe(0)
   })
 })

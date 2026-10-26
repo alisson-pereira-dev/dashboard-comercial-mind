@@ -12,7 +12,7 @@ import {
   Users,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { getDashboardData, getVendedores } from '@/lib/dashboard/queries'
+import { BancoDesatualizadoError, getDashboardData, getVendedores } from '@/lib/dashboard/queries'
 import type { DashboardData } from '@/lib/dashboard/queries'
 import { VALOR_CONSULTA, VENDEDOR_PADRAO_ID } from '@/lib/ghl/config'
 import { hrefWith } from '@/lib/url'
@@ -156,12 +156,14 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
       dataMeta = meta
       dataVendas = vendas ?? meta
     }
-  } catch {
+  } catch (e) {
     return (
       <main className="w-full space-y-5 px-4 py-6 lg:px-1 lg:py-1">
         <PageHeader title="Dashboard comercial" />
         <p role="alert" className="card p-6 text-status-abaixo">
-          Não foi possível carregar os números. Tente de novo em instantes.
+          {e instanceof BancoDesatualizadoError
+            ? 'O banco de dados está desatualizado em relação ao painel. Peça à equipe Mindsight para rodar as migrations pendentes.'
+            : 'Não foi possível carregar os números. Tente de novo em instantes.'}
         </p>
       </main>
     )
@@ -179,14 +181,14 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
   const a = dataMeta.realizado
   // Quando o faturamento está zerado por falta de dado no GHL, a tela diz o motivo.
   const avisosFaturamento: string[] = []
-  if (temDados && a.consultas_agendadas === 0) {
+  if (temDados && a.faturamento_consultas === 0) {
     avisosFaturamento.push(
-      `Faturamento em consultas vale ${formatMoney(VALOR_CONSULTA.agendada)} por consulta agendada no calendário do GHL e ${formatMoney(VALOR_CONSULTA.comparecida)} por consulta comparecida. Nenhuma consulta foi agendada neste período.`,
+      `Faturamento em consultas vale ${formatMoney(VALOR_CONSULTA.agendada)} por oportunidade que entrou na etapa Consulta Agendada e ${formatMoney(VALOR_CONSULTA.comparecida)} por consulta comparecida. Nenhuma oportunidade entrou nessa etapa neste período.`,
     )
   }
   if (temDados && a.vendas === 0) {
     avisosFaturamento.push(
-      'Faturamento em tratamentos soma o valor das oportunidades marcadas como ganhas. Nenhuma oportunidade criada neste período foi ganha.',
+      'Faturamento em tratamentos soma o valor das oportunidades marcadas como ganhas. Nenhuma oportunidade foi marcada como ganha neste período.',
     )
   }
   const metasA = dataMeta.metas
@@ -359,7 +361,7 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
         {temDados && a.consultas_agendadas > 0 && a.comparecimentos === 0 ? (
           <div className="mt-4">
             <Notice>
-              Nenhum agendamento está com status de comparecimento no calendário do GHL. A taxa de
+              Nenhum agendamento foi marcado como comparecido no calendário do GHL neste período. A taxa de
               comparecimento depende de a equipe marcar esse status.
             </Notice>
           </div>

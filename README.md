@@ -12,7 +12,7 @@ npm install
 npm run dev
 ```
 
-Antes do primeiro uso, rode as migrations de `supabase/migrations/` no projeto Supabase, em ordem. A migration `20261023000002_dashboard_resumo.sql` cria a função que busca todos os números do dashboard de uma vez; sem ela o app funciona, só que mais devagar (cerca de 13 consultas por carga).
+Antes do primeiro uso, rode as migrations de `supabase/migrations/` no projeto Supabase, em ordem. A função `dashboard_resumo` (criada e substituída pelas migrations de 23 e 26/10/2026) busca todos os números do dashboard de uma vez e é obrigatória: se o banco não tiver a versão que o app espera, a tela avisa que o banco está desatualizado. Depois de rodar a última migration (`20261026000002_datas_por_etapa.sql`, que cria a coluna `etapa_alterada_em`), clique em **Atualizar dados** uma vez para o sync preenchê-la.
 
 Verificações: `npm run typecheck`, `npm run lint`, `npm test`.
 

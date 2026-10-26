@@ -5,8 +5,8 @@ const opp = (id: string, contato: string | null, valor: number | string | null, 
   id,
   contato_id: contato,
   valor,
-  criado_em: criado,
-  fechado_em: null,
+  criado_em: '2026-01-01T10:00:00Z',
+  fechado_em: criado,
 })
 
 describe('montarTratamentos', () => {
@@ -32,7 +32,7 @@ describe('montarTratamentos', () => {
     expect(r.tratamentos.map((t) => t.paciente)).toEqual(['Ana Souza', 'Sem nome no GHL', 'Sem nome no GHL'])
   })
 
-  it('ordena pela data de criação e trata valor vazio como zero', () => {
+  it('ordena pela data em que foi ganha e trata valor vazio como zero', () => {
     const r = montarTratamentos(
       [opp('b', 'c1', null, '2026-09-10T10:00:00Z'), opp('a', 'c1', 50, '2026-09-01T10:00:00Z')],
       nomes,

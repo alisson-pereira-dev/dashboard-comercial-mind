@@ -6,27 +6,27 @@ export const METRIC_HELP: Record<MetricKey, string> = {
   leads_qualificados:
     'Oportunidades do pipeline Qualificação (IA) criadas no período com o campo TRAQ MQL marcado.',
   consultas_agendadas:
-    'Agendamentos do calendário criados no período. Os cancelados não entram.',
+    'Oportunidades do pipeline Qualificação (IA) que estão na etapa Consulta Agendada, pela data em que mudaram para essa etapa (última mudança de etapa no GHL).',
   comparecimentos:
-    'Agendamentos marcados como "compareceu" no calendário, criados dentro do período (data "criado em" do GHL).',
+    'Agendamentos marcados como "compareceu" no calendário, pela data em que o agendamento foi atualizado no GHL (quando o status foi marcado).',
   vendas:
-    'Oportunidades do pipeline Qualificação (IA) que foram criadas dentro do período (data "criado em" do GHL) e estão ganhas.',
+    'Oportunidades do pipeline Qualificação (IA) marcadas como ganhas dentro do período, pela data em que foram marcadas como ganhas no GHL.',
   consultas_novas:
     'Oportunidades do pipeline Qualificação (IA) criadas no período que estão nas etapas Consulta Agendada e Pós consulta.',
   faturamento_consultas:
-    'Cada consulta agendada no calendário do GHL vale R$ 160, e quando é marcada como comparecida passa a valer R$ 320 (no lugar dos 160, não somando). Consultas canceladas não contam. Considera as consultas criadas dentro do período. Clique no cartão para ver quais consultas formam o valor.',
+    'Cada consulta agendada (oportunidade na etapa Consulta Agendada) vale R$ 160, e quando é marcada como comparecida no calendário do GHL passa a valer R$ 320 (no lugar dos 160, não somando). Segue as mesmas datas dos cartões Consultas agendadas e Comparecimentos. Clique no cartão para ver quais linhas formam o valor.',
   faturamento_tratamentos:
-    'Soma do valor das oportunidades do pipeline Qualificação (IA) marcadas como ganhas, criadas dentro do período. Clique no cartão para ver quais oportunidades formam o valor.',
+    'Soma do valor das oportunidades do pipeline Qualificação (IA) marcadas como ganhas dentro do período (as mesmas do cartão Vendas). Clique no cartão para ver quais oportunidades formam o valor.',
   faturamento_total: 'Faturamento em consultas mais faturamento em tratamentos.',
 }
 
 export const EXTRA_HELP = {
   tratamentosNovos:
-    'Oportunidades criadas no período que passaram pela etapa de consulta (Consulta Agendada ou Pós consulta) e estão marcadas como ganhas: consulta feita e convertida em tratamento.',
+    'Oportunidades marcadas como ganhas no período que estão nas etapas de consulta (Consulta Agendada ou Pós consulta): consulta feita e convertida em tratamento.',
   fechamentosConsulta:
-    'Oportunidades do pipeline Qualificação (IA) criadas no período que estão marcadas como ganhas e na etapa Consulta Agendada.',
+    'Oportunidades do pipeline Qualificação (IA) marcadas como ganhas no período que estão na etapa Consulta Agendada.',
   fechamentosFollowup:
-    'Oportunidades do pipeline Qualificação (IA) criadas no período que estão marcadas como ganhas e na etapa Pós consulta (follow up).',
+    'Oportunidades do pipeline Qualificação (IA) marcadas como ganhas no período que estão na etapa Pós consulta (follow up).',
   metaFaturamento:
     'Quanto do faturamento total já foi feito em relação à meta cadastrada para o período.',
   qualificacao: 'Leads qualificados divididos pelos leads. Mostra quantos leads viram MQL.',

@@ -18,7 +18,7 @@ export type TratamentosResultado =
 const DIA_MS = 86_400_000
 
 // Oportunidades que formam o "Em tratamentos" de um período: as mesmas que o cartão soma (ganhas do
-// pipeline do funil, criadas no período e, com vendedor, do responsável escolhido). Roda com a sessão
+// pipeline do funil, marcadas como ganhas no período e, com vendedor, do responsável escolhido). Roda com a sessão
 // de quem está logado, então o RLS continua valendo.
 export async function listarTratamentos(input: {
   inicio: string
@@ -42,9 +42,9 @@ export async function listarTratamentos(input: {
       .select('id, contato_id, valor, criado_em, fechado_em')
       .eq('status', 'ganha')
       .eq('pipeline_nome', PIPELINE_FUNIL)
-      .gte('criado_em', inicio)
-      .lt('criado_em', fim)
-      .order('criado_em', { ascending: true })
+      .gte('fechado_em', inicio)
+      .lt('fechado_em', fim)
+      .order('fechado_em', { ascending: true })
       .limit(1000)
     if (vendedorId) q = q.eq('responsavel_id', vendedorId)
     const { data: linhas, error } = await q
