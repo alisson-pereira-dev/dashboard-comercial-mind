@@ -184,7 +184,7 @@ body {
     scrollbar-color: var(--brand) transparent;
   }
   .scrollbar-brand::-webkit-scrollbar {
-    height: 1px;
+    height: 0.5px;
   }
   .scrollbar-brand::-webkit-scrollbar-track {
     background: transparent;
