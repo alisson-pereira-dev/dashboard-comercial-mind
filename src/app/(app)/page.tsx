@@ -365,6 +365,124 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
         ) : null}
       </section>
 
+      <section aria-labelledby="numeros-titulo" className="space-y-4">
+        <SectionHeader
+          id="numeros-titulo"
+          title="Números de vendas"
+          subtitle={`Resultados registrados em ${periodLabel(periodVendas)}${vendedorNome ? ` (${vendedorNome})` : ''}.`}
+        />
+        {vendedorNome ? <AtribuicaoNota data={dataVendas} period={periodVendas} nome={vendedorNome} /> : null}
+        <SortableCards
+          storageKey="dashboard:ordem:numeros"
+          dndId="numeros"
+          className="grid gap-4 md:grid-cols-3 2xl:grid-cols-5"
+          items={[
+            {
+              id: 'vendas',
+              label: 'Vendas',
+              node: (
+                <GoalCard
+                  standalone
+                  compacto
+                  icon={BarChart3}
+                  label="Vendas"
+                  info={METRIC_HELP.vendas}
+                  realizado={b.vendas}
+                  meta={metasB.vendas}
+                />
+              ),
+            },
+            {
+              id: 'consultas_novas',
+              label: 'Consultas novas',
+              node: (
+                <GoalCard
+                  standalone
+                  compacto
+                  icon={CalendarDays}
+                  label="Consultas novas"
+                  info={METRIC_HELP.consultas_novas}
+                  realizado={b.consultas_novas}
+                  meta={metasB.consultas_novas}
+                />
+              ),
+            },
+            {
+              id: 'tratamentos_novos',
+              label: 'Tratamentos novos',
+              node: (
+                <CountCard
+                  icon={FilePlus2}
+                  label="Tratamentos novos"
+                  info={EXTRA_HELP.tratamentosNovos}
+                  value={b.tratamentosNovos}
+                />
+              ),
+            },
+            {
+              id: 'fechamentos_consulta',
+              label: 'Fechamentos em consulta',
+              node: (
+                <FechamentosDetalhe
+                  etapa="consulta"
+                  etapaId={ETAPA_CONSULTA_AGENDADA_ID}
+                  inicio={periodVendas.fromIso}
+                  fim={periodVendas.toIso}
+                  vendedorId={vendedorId}
+                  periodo={periodLabel(periodVendas)}
+                >
+                  <CountCard
+                    icon={CalendarCheck}
+                    label="Fechamentos em consulta"
+                    info={EXTRA_HELP.fechamentosConsulta}
+                    value={b.fechamentosConsulta}
+                    rodape={
+                      <button
+                        type="button"
+                        data-abre-detalhe
+                        className="text-sm font-semibold text-brand-ink underline-offset-4 hover:underline"
+                      >
+                        Ver os fechamentos
+                      </button>
+                    }
+                  />
+                </FechamentosDetalhe>
+              ),
+            },
+            {
+              id: 'fechamentos_followup',
+              label: 'Fechamentos em follow up',
+              node: (
+                <FechamentosDetalhe
+                  etapa="followup"
+                  etapaId={ETAPA_POS_CONSULTA_ID}
+                  inicio={periodVendas.fromIso}
+                  fim={periodVendas.toIso}
+                  vendedorId={vendedorId}
+                  periodo={periodLabel(periodVendas)}
+                >
+                  <CountCard
+                    icon={MessageCircleReply}
+                    label="Fechamentos em follow up"
+                    info={EXTRA_HELP.fechamentosFollowup}
+                    value={b.fechamentosFollowup}
+                    rodape={
+                      <button
+                        type="button"
+                        data-abre-detalhe
+                        className="text-sm font-semibold text-brand-ink underline-offset-4 hover:underline"
+                      >
+                        Ver os fechamentos
+                      </button>
+                    }
+                  />
+                </FechamentosDetalhe>
+              ),
+            },
+          ]}
+        />
+      </section>
+
       <section className="card p-5 sm:p-6" aria-labelledby="realizado-titulo">
         <SectionHeader
           id="realizado-titulo"
@@ -581,124 +699,6 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
           />
         </DragScrollRow>
         <p className="text-xs text-muted">Taxa não calculável (mostrada como hífen) quando a etapa de origem tem zero registros.</p>
-      </section>
-
-      <section aria-labelledby="numeros-titulo" className="space-y-4">
-        <SectionHeader
-          id="numeros-titulo"
-          title="Números de vendas"
-          subtitle={`Resultados registrados em ${periodLabel(periodVendas)}${vendedorNome ? ` (${vendedorNome})` : ''}.`}
-        />
-        {vendedorNome ? <AtribuicaoNota data={dataVendas} period={periodVendas} nome={vendedorNome} /> : null}
-        <SortableCards
-          storageKey="dashboard:ordem:numeros"
-          dndId="numeros"
-          className="grid gap-4 md:grid-cols-3 2xl:grid-cols-5"
-          items={[
-            {
-              id: 'vendas',
-              label: 'Vendas',
-              node: (
-                <GoalCard
-                  standalone
-                  compacto
-                  icon={BarChart3}
-                  label="Vendas"
-                  info={METRIC_HELP.vendas}
-                  realizado={b.vendas}
-                  meta={metasB.vendas}
-                />
-              ),
-            },
-            {
-              id: 'consultas_novas',
-              label: 'Consultas novas',
-              node: (
-                <GoalCard
-                  standalone
-                  compacto
-                  icon={CalendarDays}
-                  label="Consultas novas"
-                  info={METRIC_HELP.consultas_novas}
-                  realizado={b.consultas_novas}
-                  meta={metasB.consultas_novas}
-                />
-              ),
-            },
-            {
-              id: 'tratamentos_novos',
-              label: 'Tratamentos novos',
-              node: (
-                <CountCard
-                  icon={FilePlus2}
-                  label="Tratamentos novos"
-                  info={EXTRA_HELP.tratamentosNovos}
-                  value={b.tratamentosNovos}
-                />
-              ),
-            },
-            {
-              id: 'fechamentos_consulta',
-              label: 'Fechamentos em consulta',
-              node: (
-                <FechamentosDetalhe
-                  etapa="consulta"
-                  etapaId={ETAPA_CONSULTA_AGENDADA_ID}
-                  inicio={periodVendas.fromIso}
-                  fim={periodVendas.toIso}
-                  vendedorId={vendedorId}
-                  periodo={periodLabel(periodVendas)}
-                >
-                  <CountCard
-                    icon={CalendarCheck}
-                    label="Fechamentos em consulta"
-                    info={EXTRA_HELP.fechamentosConsulta}
-                    value={b.fechamentosConsulta}
-                    rodape={
-                      <button
-                        type="button"
-                        data-abre-detalhe
-                        className="text-sm font-semibold text-brand-ink underline-offset-4 hover:underline"
-                      >
-                        Ver os fechamentos
-                      </button>
-                    }
-                  />
-                </FechamentosDetalhe>
-              ),
-            },
-            {
-              id: 'fechamentos_followup',
-              label: 'Fechamentos em follow up',
-              node: (
-                <FechamentosDetalhe
-                  etapa="followup"
-                  etapaId={ETAPA_POS_CONSULTA_ID}
-                  inicio={periodVendas.fromIso}
-                  fim={periodVendas.toIso}
-                  vendedorId={vendedorId}
-                  periodo={periodLabel(periodVendas)}
-                >
-                  <CountCard
-                    icon={MessageCircleReply}
-                    label="Fechamentos em follow up"
-                    info={EXTRA_HELP.fechamentosFollowup}
-                    value={b.fechamentosFollowup}
-                    rodape={
-                      <button
-                        type="button"
-                        data-abre-detalhe
-                        className="text-sm font-semibold text-brand-ink underline-offset-4 hover:underline"
-                      >
-                        Ver os fechamentos
-                      </button>
-                    }
-                  />
-                </FechamentosDetalhe>
-              ),
-            },
-          ]}
-        />
       </section>
     </main>
   )

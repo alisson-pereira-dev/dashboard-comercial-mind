@@ -173,6 +173,16 @@ body {
     --bar-a: #d1d5db;
     --bar-b: #9ca3af;
   }
+
+  /* Esconde a barra de rolagem nativa sem desligar a rolagem (usado na faixa de arrasto
+     de Taxas, DragScrollRow): o arrasto continua funcionando, só a barra cinza some. */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

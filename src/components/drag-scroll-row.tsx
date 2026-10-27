@@ -50,7 +50,7 @@ export function DragScrollRow({ children, className }: { children: ReactNode; cl
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
-      className={`cursor-grab overflow-x-auto overscroll-x-contain active:cursor-grabbing ${className ?? ''}`}
+      className={`scrollbar-hide cursor-grab overflow-x-auto overscroll-x-contain active:cursor-grabbing ${className ?? ''}`}
     >
       {children}
     </div>
