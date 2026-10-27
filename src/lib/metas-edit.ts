@@ -78,6 +78,10 @@ export function modoInicial(valores: Valores): Modo {
  * - Editar uma etapa só muda aquela etapa; as taxas são recalculadas apenas para exibição.
  * Nos dois modos:
  * - Editar faturamento em consultas ou em tratamentos faz o total virar a soma dos dois.
+ * - Editar consultas novas recalcula o faturamento em consultas, mantendo o valor por consulta
+ *   que já estava nos dois campos (valor antigo ÷ quantidade antiga × quantidade nova), e o total
+ *   junto. Só funciona se os dois campos já tinham algo preenchido; senão não há valor por
+ *   consulta para manter, e o campo de faturamento não muda sozinho.
  * - Valores em branco ou inválidos nunca disparam cálculo.
  */
 export function editar(
@@ -105,7 +109,17 @@ export function editar(
   if (campo.tipo === 'valor') {
     valores[campo.chave] = texto
 
-    if (campo.chave === 'faturamento_consultas' || campo.chave === 'faturamento_tratamentos') {
+    if (campo.chave === 'consultas_novas') {
+      const precoAntigo = num(estado.valores.faturamento_consultas)
+      const qtdAntiga = num(estado.valores.consultas_novas)
+      const qtdNova = num(texto)
+      if (precoAntigo !== null && qtdAntiga !== null && qtdAntiga > 0 && qtdNova !== null) {
+        valores.faturamento_consultas = duasCasas((precoAntigo / qtdAntiga) * qtdNova)
+        auto.add('faturamento_consultas')
+      }
+    }
+
+    if (campo.chave === 'faturamento_consultas' || campo.chave === 'faturamento_tratamentos' || campo.chave === 'consultas_novas') {
       const c = num(valores.faturamento_consultas)
       const t = num(valores.faturamento_tratamentos)
       valores.faturamento_total = c === null && t === null ? '' : duasCasas((c ?? 0) + (t ?? 0))

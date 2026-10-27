@@ -120,6 +120,41 @@ describe('editar: faturamento', () => {
     e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '')
     expect(e.valores.faturamento_total).toBe('')
   })
+
+  it('mudar consultas novas recalcula em consultas mantendo o valor por consulta', () => {
+    let e: ReturnType<typeof editar> = { ...estado(), auto: [] }
+    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '4800')
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '15')
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '20')
+    expect(e.valores.faturamento_consultas).toBe('6400') // 4800 / 15 x 20
+    expect(e.valores.faturamento_total).toBe('6400')
+    expect(e.auto).toContain('faturamento_consultas')
+    expect(e.auto).toContain('faturamento_total')
+  })
+
+  it('sem quantidade anterior, mudar consultas novas não mexe em em consultas', () => {
+    let e: ReturnType<typeof editar> = { ...estado(), auto: [] }
+    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '4800')
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '15')
+    expect(e.valores.faturamento_consultas).toBe('4800')
+    expect(e.auto).not.toContain('faturamento_consultas')
+  })
+
+  it('sem preço anterior em consultas, mudar consultas novas não cria um valor', () => {
+    let e: ReturnType<typeof editar> = { ...estado(), auto: [] }
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '15')
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '20')
+    expect(e.valores.faturamento_consultas).toBe('')
+  })
+
+  it('editar em consultas direto muda o valor por consulta usado depois', () => {
+    let e: ReturnType<typeof editar> = { ...estado(), auto: [] }
+    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '4800')
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '15')
+    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '3000') // 200 por consulta
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '10')
+    expect(e.valores.faturamento_consultas).toBe('2000')
+  })
 })
 
 describe('modo manual', () => {

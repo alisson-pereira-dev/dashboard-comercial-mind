@@ -423,7 +423,9 @@ export function MetasForm({
           </div>
           <p className="mt-3 text-xs text-muted">
             O total é a soma das metas de consultas e de tratamentos e muda sozinho quando você as altera. Você pode ajustá-lo à
-            mão. Consultas novas é uma quantidade, não um valor em reais. Arraste pela alça no canto de cada cartão para reordenar.
+            mão. Consultas novas é uma quantidade, não um valor em reais. Se Em consultas e Consultas novas já tiverem valor,
+            mudar a quantidade recalcula Em consultas sozinho, mantendo o mesmo valor por consulta (edite Em consultas direto
+            para mudar esse valor por consulta). Arraste pela alça no canto de cada cartão para reordenar.
           </p>
         </section>
 
