@@ -31,6 +31,7 @@ import { ConsultasDetalhe } from '@/components/consultas-detalhe'
 import { TratamentosDetalhe } from '@/components/tratamentos-detalhe'
 import { GoalFunnels } from '@/components/goal-funnels'
 import { RateCard } from '@/components/rate-card'
+import { DragScrollRow } from '@/components/drag-scroll-row'
 import { PageHeader } from '@/components/page-header'
 import { SyncButton } from '@/components/sync-button'
 import { SortableCards } from '@/components/sortable-cards'
@@ -198,6 +199,8 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
     consultasAgendadas: a.consultas_agendadas,
     comparecimentos: a.comparecimentos,
     vendas: a.vendas,
+    fechamentosConsulta: a.fechamentosConsulta,
+    fechamentosFollowup: a.fechamentosFollowup,
   })
   const idealRates = funnelRatesFromGoals(metasA)
 
@@ -210,6 +213,8 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
     consultasAgendadas: b.consultas_agendadas,
     comparecimentos: b.comparecimentos,
     vendas: b.vendas,
+    fechamentosConsulta: b.fechamentosConsulta,
+    fechamentosFollowup: b.fechamentosFollowup,
   })
 
   return (
@@ -418,54 +423,119 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
             />
           }
         />
-        {/* Cinco cartões numa linha em telas largas; abaixo disso, duas colunas e depois uma */}
-        <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-5">
-          <RateCard
-            icon={Filter}
-            label="Taxa de qualificação"
-            help={EXTRA_HELP.qualificacao}
-            value={ratesB.qualificacao}
-            from="Leads"
-            to="Leads qualificados"
-            caption={`${plural(b.leads_qualificados, 'qualificado', 'qualificados')} / ${plural(b.leads, 'lead', 'leads')}`}
+        {/* Faixa que rola na horizontal (arraste com o mouse ou toque); a alça de cada cartão reordena */}
+        <DragScrollRow className="pb-2">
+          <SortableCards
+            storageKey="dashboard:ordem:taxas"
+            dndId="taxas"
+            layout="horizontal"
+            className="flex gap-4"
+            items={[
+              {
+                id: 'qualificacao',
+                label: 'Taxa de qualificação',
+                node: (
+                  <div className="h-full w-[300px] shrink-0 sm:w-[340px] [&>*]:h-full">
+                    <RateCard
+                      icon={Filter}
+                      label="Taxa de qualificação"
+                      help={EXTRA_HELP.qualificacao}
+                      value={ratesB.qualificacao}
+                      from="Leads"
+                      to="Leads qualificados"
+                      caption={`${plural(b.leads_qualificados, 'qualificado', 'qualificados')} / ${plural(b.leads, 'lead', 'leads')}`}
+                    />
+                  </div>
+                ),
+              },
+              {
+                id: 'agendamento_mql',
+                label: 'Taxa de agendamento de MQL',
+                node: (
+                  <div className="h-full w-[300px] shrink-0 sm:w-[340px] [&>*]:h-full">
+                    <RateCard
+                      icon={CalendarDays}
+                      label="Taxa de agendamento de MQL"
+                      help={EXTRA_HELP.agendamento}
+                      value={ratesB.agendamento}
+                      from="Leads qualificados"
+                      to="Consultas agendadas"
+                      caption={`${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')} / ${plural(b.leads_qualificados, 'qualificado', 'qualificados')}`}
+                    />
+                  </div>
+                ),
+              },
+              {
+                id: 'agendamento_lead',
+                label: 'Taxa de agendamento de leads',
+                node: (
+                  <div className="h-full w-[300px] shrink-0 sm:w-[340px] [&>*]:h-full">
+                    <RateCard
+                      icon={CalendarPlus}
+                      label="Taxa de agendamento de leads"
+                      help={EXTRA_HELP.agendamentoLead}
+                      value={ratesB.agendamentoLead}
+                      from="Leads"
+                      to="Consultas agendadas"
+                      caption={`${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')} / ${plural(b.leads, 'lead', 'leads')}`}
+                    />
+                  </div>
+                ),
+              },
+              {
+                id: 'comparecimento',
+                label: 'Taxa de comparecimento',
+                node: (
+                  <div className="h-full w-[300px] shrink-0 sm:w-[340px] [&>*]:h-full">
+                    <RateCard
+                      icon={Users}
+                      label="Taxa de comparecimento"
+                      help={EXTRA_HELP.comparecimento}
+                      value={ratesB.comparecimento}
+                      from="Consultas agendadas"
+                      to="Comparecimentos"
+                      caption={`${plural(b.comparecimentos, 'comparecimento', 'comparecimentos')} / ${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')}`}
+                    />
+                  </div>
+                ),
+              },
+              {
+                id: 'conversao_consulta',
+                label: 'Taxa de conversão na consulta',
+                node: (
+                  <div className="h-full w-[300px] shrink-0 sm:w-[340px] [&>*]:h-full">
+                    <RateCard
+                      icon={FilePlus2}
+                      label="Taxa de conversão na consulta"
+                      help={EXTRA_HELP.conversaoConsulta}
+                      value={ratesB.conversaoConsulta}
+                      from="Comparecimentos"
+                      to="Fechamentos em consulta"
+                      caption={`${plural(b.fechamentosConsulta, 'fechamento', 'fechamentos')} / ${plural(b.comparecimentos, 'comparecimento', 'comparecimentos')}`}
+                    />
+                  </div>
+                ),
+              },
+              {
+                id: 'conversao_pos_consulta',
+                label: 'Taxa de conversão pós consulta',
+                node: (
+                  <div className="h-full w-[300px] shrink-0 sm:w-[340px] [&>*]:h-full">
+                    <RateCard
+                      icon={MessageCircleReply}
+                      label="Taxa de conversão pós consulta"
+                      help={EXTRA_HELP.conversaoPosConsulta}
+                      value={ratesB.conversaoPosConsulta}
+                      from="Comparecimentos"
+                      to="Fechamentos em follow up"
+                      caption={`${plural(b.fechamentosFollowup, 'fechamento', 'fechamentos')} / ${plural(b.comparecimentos, 'comparecimento', 'comparecimentos')}`}
+                    />
+                  </div>
+                ),
+              },
+            ]}
           />
-          <RateCard
-            icon={CalendarDays}
-            label="Taxa de agendamento de MQL"
-            help={EXTRA_HELP.agendamento}
-            value={ratesB.agendamento}
-            from="Leads qualificados"
-            to="Consultas agendadas"
-            caption={`${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')} / ${plural(b.leads_qualificados, 'qualificado', 'qualificados')}`}
-          />
-          <RateCard
-            icon={CalendarPlus}
-            label="Taxa de agendamento de leads"
-            help={EXTRA_HELP.agendamentoLead}
-            value={ratesB.agendamentoLead}
-            from="Leads"
-            to="Consultas agendadas"
-            caption={`${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')} / ${plural(b.leads, 'lead', 'leads')}`}
-          />
-          <RateCard
-            icon={Users}
-            label="Taxa de comparecimento"
-            help={EXTRA_HELP.comparecimento}
-            value={ratesB.comparecimento}
-            from="Consultas agendadas"
-            to="Comparecimentos"
-            caption={`${plural(b.comparecimentos, 'comparecimento', 'comparecimentos')} / ${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')}`}
-          />
-          <RateCard
-            icon={FilePlus2}
-            label="Taxa de conversão na consulta"
-            help={EXTRA_HELP.conversaoConsulta}
-            value={ratesB.conversaoConsulta}
-            from="Comparecimentos"
-            to="Vendas"
-            caption={`${plural(b.vendas, 'venda', 'vendas')} / ${plural(b.comparecimentos, 'comparecimento', 'comparecimentos')}`}
-          />
-        </div>
+        </DragScrollRow>
         <p className="text-xs text-muted">Taxa não calculável (mostrada como hífen) quando a etapa de origem tem zero registros.</p>
       </section>
 
@@ -476,44 +546,79 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
           subtitle={`Resultados registrados em ${periodLabel(periodVendas)}${vendedorNome ? ` (${vendedorNome})` : ''}.`}
         />
         {vendedorNome ? <AtribuicaoNota data={dataVendas} period={periodVendas} nome={vendedorNome} /> : null}
-        <div className="grid gap-4 md:grid-cols-3 2xl:grid-cols-5">
-          <GoalCard
-            standalone
-            compacto
-            icon={BarChart3}
-            label="Vendas"
-            info={METRIC_HELP.vendas}
-            realizado={b.vendas}
-            meta={metasB.vendas}
-          />
-          <GoalCard
-            standalone
-            compacto
-            icon={CalendarDays}
-            label="Consultas novas"
-            info={METRIC_HELP.consultas_novas}
-            realizado={b.consultas_novas}
-            meta={metasB.consultas_novas}
-          />
-          <CountCard
-            icon={FilePlus2}
-            label="Tratamentos novos"
-            info={EXTRA_HELP.tratamentosNovos}
-            value={b.tratamentosNovos}
-          />
-          <CountCard
-            icon={CalendarCheck}
-            label="Fechamentos em consulta"
-            info={EXTRA_HELP.fechamentosConsulta}
-            value={b.fechamentosConsulta}
-          />
-          <CountCard
-            icon={MessageCircleReply}
-            label="Fechamentos em follow up"
-            info={EXTRA_HELP.fechamentosFollowup}
-            value={b.fechamentosFollowup}
-          />
-        </div>
+        <SortableCards
+          storageKey="dashboard:ordem:numeros"
+          dndId="numeros"
+          className="grid gap-4 md:grid-cols-3 2xl:grid-cols-5"
+          items={[
+            {
+              id: 'vendas',
+              label: 'Vendas',
+              node: (
+                <GoalCard
+                  standalone
+                  compacto
+                  icon={BarChart3}
+                  label="Vendas"
+                  info={METRIC_HELP.vendas}
+                  realizado={b.vendas}
+                  meta={metasB.vendas}
+                />
+              ),
+            },
+            {
+              id: 'consultas_novas',
+              label: 'Consultas novas',
+              node: (
+                <GoalCard
+                  standalone
+                  compacto
+                  icon={CalendarDays}
+                  label="Consultas novas"
+                  info={METRIC_HELP.consultas_novas}
+                  realizado={b.consultas_novas}
+                  meta={metasB.consultas_novas}
+                />
+              ),
+            },
+            {
+              id: 'tratamentos_novos',
+              label: 'Tratamentos novos',
+              node: (
+                <CountCard
+                  icon={FilePlus2}
+                  label="Tratamentos novos"
+                  info={EXTRA_HELP.tratamentosNovos}
+                  value={b.tratamentosNovos}
+                />
+              ),
+            },
+            {
+              id: 'fechamentos_consulta',
+              label: 'Fechamentos em consulta',
+              node: (
+                <CountCard
+                  icon={CalendarCheck}
+                  label="Fechamentos em consulta"
+                  info={EXTRA_HELP.fechamentosConsulta}
+                  value={b.fechamentosConsulta}
+                />
+              ),
+            },
+            {
+              id: 'fechamentos_followup',
+              label: 'Fechamentos em follow up',
+              node: (
+                <CountCard
+                  icon={MessageCircleReply}
+                  label="Fechamentos em follow up"
+                  info={EXTRA_HELP.fechamentosFollowup}
+                  value={b.fechamentosFollowup}
+                />
+              ),
+            },
+          ]}
+        />
       </section>
     </main>
   )

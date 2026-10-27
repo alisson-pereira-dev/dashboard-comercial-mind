@@ -15,6 +15,7 @@ import {
 import {
   SortableContext,
   arrayMove,
+  horizontalListSortingStrategy,
   rectSortingStrategy,
   sortableKeyboardCoordinates,
   useSortable,
@@ -98,13 +99,21 @@ export function SortableCards({
   dndId,
   items,
   className,
+  layout = 'grid',
 }: {
   storageKey: string
   /** Id estável do contexto de arraste, para a renderização no servidor e no navegador coincidirem. */
   dndId: string
   items: SortableItem[]
   className?: string
+  /**
+   * Layout dos cartões: "grid" (padrão) ou "horizontal" (faixa que rola de lado). Recebido como string,
+   * não como a estratégia do dnd-kit em si, porque este componente é usado a partir de Server Components
+   * (a página do dashboard) e importar o dnd-kit lá quebra o build.
+   */
+  layout?: 'grid' | 'horizontal'
 }) {
+  const strategy = layout === 'horizontal' ? horizontalListSortingStrategy : rectSortingStrategy
   const defaultKey = items.map((i) => i.id).join('|')
   const saved = useSavedOrder(storageKey, defaultKey)
   // Se o navegador não deixar gravar (janela privada), a ordem vale só até recarregar.
@@ -181,7 +190,7 @@ export function SortableCards({
           },
         }}
       >
-        <SortableContext items={ordered.map((i) => i.id)} strategy={rectSortingStrategy}>
+        <SortableContext items={ordered.map((i) => i.id)} strategy={strategy}>
           <div className={className}>
             {ordered.map((item) => (
               <Item key={item.id} item={item} />
