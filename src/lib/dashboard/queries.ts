@@ -16,6 +16,8 @@ export type Realizado = Record<MetricKey, number> & {
   fechamentosConsulta: number
   /** Ganhas (no período) que estão na etapa "Pós consulta". */
   fechamentosFollowup: number
+  /** Oportunidades que ESTÃO na etapa Pós consulta (pela data da última mudança de etapa). Base da taxa de conversão pós consulta; não confundir com `consultas_novas`. */
+  posConsultaN: number
 }
 
 export type SyncInfo = {
@@ -45,8 +47,8 @@ export class BancoDesatualizadoError extends Error {
   }
 }
 
-// Versão da função dashboard_resumo que este código espera (migration 20261026000003).
-const VERSAO_FUNCAO = 3
+// Versão da função dashboard_resumo que este código espera (migration 20261027000001).
+const VERSAO_FUNCAO = 4
 
 export type Vendedor = { id: string; nome: string }
 
@@ -91,12 +93,14 @@ function somarMetas(period: Period, rows: MetaRow[]): Record<MetricKey, number |
   return metas
 }
 
-// Resposta da função dashboard_resumo (supabase/migrations/20261026000003).
+// Resposta da função dashboard_resumo (supabase/migrations/20261027000001).
 type Resumo = {
   versao: number
   leads: number
   leads_qualificados: number
   consultas_agendadas: number
+  /** Oportunidades na etapa Pós consulta (base da taxa de conversão pós consulta). */
+  pos_consulta_n: number
   /** Agendamentos do calendário (não cancelados, criado_em no período): base do "Em consultas". */
   faturamento_agendadas: number
   comparecimentos: number
@@ -158,6 +162,7 @@ export async function getDashboardData(
       tratamentosNovos: r.consultas_ganhas,
       fechamentosConsulta: r.fechamentos_consulta,
       fechamentosFollowup: r.fechamentos_followup,
+      posConsultaN: r.pos_consulta_n,
     },
     metas: somarMetas(period, r.metas),
     ultimoSync: s

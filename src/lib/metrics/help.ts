@@ -37,7 +37,7 @@ export const EXTRA_HELP = {
   comparecimento:
     'Comparecimentos divididos pelas consultas agendadas. Mostra quantas consultas marcadas acontecem.',
   conversaoConsulta:
-    'Oportunidades ganhas na etapa Consulta Agendada divididas pelos comparecimentos. Mostra quantas consultas realizadas fecham venda logo na primeira consulta.',
+    'Oportunidades ganhas na etapa Consulta Agendada divididas pelas oportunidades que estão nessa etapa. Mostra quantos dos que chegaram à consulta fecham venda logo ali.',
   conversaoPosConsulta:
-    'Oportunidades ganhas na etapa Pós consulta divididas pelos comparecimentos. Mostra quantas consultas realizadas fecham venda depois, no acompanhamento (follow up).',
+    'Oportunidades ganhas na etapa Pós consulta divididas pelas oportunidades que estão nessa etapa. Mostra quantos dos que seguiram para o acompanhamento (follow up) fecham venda depois.',
 } as const

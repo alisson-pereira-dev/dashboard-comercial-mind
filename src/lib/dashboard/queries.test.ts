@@ -4,10 +4,11 @@ import { parsePeriod } from '@/lib/metrics/period'
 
 // Saída real da função dashboard_resumo (out/2026, clínica toda), tirada de uma cópia dos dados.
 const RESUMO = {
-  versao: 3,
+  versao: 4,
   leads: 121,
   leads_qualificados: 8,
   consultas_agendadas: 8,
+  pos_consulta_n: 3,
   faturamento_agendadas: 2,
   comparecimentos: 0,
   vendas: 0,
@@ -75,6 +76,7 @@ describe('getDashboardData com a função dashboard_resumo', () => {
       tratamentosNovos: 0,
       fechamentosConsulta: 0,
       fechamentosFollowup: 0,
+      posConsultaN: 3,
       faturamento_consultas: 320,
       faturamento_tratamentos: 0,
       faturamento_total: 320,
@@ -148,9 +150,10 @@ describe('getDashboardData com a função dashboard_resumo', () => {
 
 describe('getDashboardData com o banco desatualizado', () => {
   it('versão anterior da função (sem "versao") não vira número pela regra antiga: avisa', async () => {
-    const { versao: _removida, faturamento_agendadas: _fa, ...antiga } = RESUMO
+    const { versao: _removida, faturamento_agendadas: _fa, pos_consulta_n: _pc, ...antiga } = RESUMO
     void _removida
     void _fa
+    void _pc
     const rpc = vi.fn().mockResolvedValue({ data: antiga, error: null })
     const getDashboardData = await carregar()
     await expect(getDashboardData({ rpc } as unknown as SupabaseClient, periodo, null)).rejects.toMatchObject({

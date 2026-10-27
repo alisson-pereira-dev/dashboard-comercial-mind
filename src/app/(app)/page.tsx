@@ -201,6 +201,7 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
     vendas: a.vendas,
     fechamentosConsulta: a.fechamentosConsulta,
     fechamentosFollowup: a.fechamentosFollowup,
+    posConsultaN: a.posConsultaN,
   })
   const idealRates = funnelRatesFromGoals(metasA)
 
@@ -215,6 +216,7 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
     vendas: b.vendas,
     fechamentosConsulta: b.fechamentosConsulta,
     fechamentosFollowup: b.fechamentosFollowup,
+    posConsultaN: b.posConsultaN,
   })
 
   return (
@@ -509,9 +511,9 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                       label="Taxa de conversão na consulta"
                       help={EXTRA_HELP.conversaoConsulta}
                       value={ratesB.conversaoConsulta}
-                      from="Comparecimentos"
+                      from="Consultas agendadas"
                       to="Fechamentos em consulta"
-                      caption={`${plural(b.fechamentosConsulta, 'fechamento', 'fechamentos')} / ${plural(b.comparecimentos, 'comparecimento', 'comparecimentos')}`}
+                      caption={`${plural(b.fechamentosConsulta, 'fechamento', 'fechamentos')} / ${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')}`}
                     />
                   </div>
                 ),
@@ -526,9 +528,9 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                       label="Taxa de conversão pós consulta"
                       help={EXTRA_HELP.conversaoPosConsulta}
                       value={ratesB.conversaoPosConsulta}
-                      from="Comparecimentos"
+                      from="Pós consulta"
                       to="Fechamentos em follow up"
-                      caption={`${plural(b.fechamentosFollowup, 'fechamento', 'fechamentos')} / ${plural(b.comparecimentos, 'comparecimento', 'comparecimentos')}`}
+                      caption={`${plural(b.fechamentosFollowup, 'fechamento', 'fechamentos')} / ${plural(b.posConsultaN, 'oportunidade', 'oportunidades')}`}
                     />
                   </div>
                 ),
