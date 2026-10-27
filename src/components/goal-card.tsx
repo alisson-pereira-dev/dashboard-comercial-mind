@@ -110,11 +110,14 @@ export function CountCard({
   label,
   info,
   value,
+  rodape,
 }: {
   icon: LucideIcon
   label: string
   info: string
   value: number
+  /** Ação no pé do cartão (por exemplo, "Ver os fechamentos"). */
+  rodape?: React.ReactNode
 }) {
   return (
     <div className="card flex flex-col p-5">
@@ -127,6 +130,7 @@ export function CountCard({
       </div>
       <p className="mt-4 text-[32px] font-bold leading-none tracking-tight text-navy">{formatInt(value)}</p>
       <p className="mt-2 text-sm text-muted">Sem meta cadastrada</p>
+      {rodape ? <div className="mt-3">{rodape}</div> : null}
     </div>
   )
 }

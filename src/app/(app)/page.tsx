@@ -14,7 +14,12 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import { BancoDesatualizadoError, getDashboardData, getVendedores } from '@/lib/dashboard/queries'
 import type { DashboardData } from '@/lib/dashboard/queries'
-import { VALOR_CONSULTA, VENDEDOR_PADRAO_ID } from '@/lib/ghl/config'
+import {
+  ETAPA_CONSULTA_AGENDADA_ID,
+  ETAPA_POS_CONSULTA_ID,
+  VALOR_CONSULTA,
+  VENDEDOR_PADRAO_ID,
+} from '@/lib/ghl/config'
 import { hrefWith } from '@/lib/url'
 import {
   EXTRA_HELP,
@@ -29,6 +34,7 @@ import { formatDateTime, formatInt, formatMoney, periodLabel } from '@/lib/forma
 import { GoalCard, CountCard } from '@/components/goal-card'
 import { ConsultasDetalhe } from '@/components/consultas-detalhe'
 import { TratamentosDetalhe } from '@/components/tratamentos-detalhe'
+import { FechamentosDetalhe } from '@/components/fechamentos-detalhe'
 import { GoalFunnels } from '@/components/goal-funnels'
 import { RateCard } from '@/components/rate-card'
 import { DragScrollRow } from '@/components/drag-scroll-row'
@@ -599,24 +605,60 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
               id: 'fechamentos_consulta',
               label: 'Fechamentos em consulta',
               node: (
-                <CountCard
-                  icon={CalendarCheck}
-                  label="Fechamentos em consulta"
-                  info={EXTRA_HELP.fechamentosConsulta}
-                  value={b.fechamentosConsulta}
-                />
+                <FechamentosDetalhe
+                  etapa="consulta"
+                  etapaId={ETAPA_CONSULTA_AGENDADA_ID}
+                  inicio={periodVendas.fromIso}
+                  fim={periodVendas.toIso}
+                  vendedorId={vendedorId}
+                  periodo={periodLabel(periodVendas)}
+                >
+                  <CountCard
+                    icon={CalendarCheck}
+                    label="Fechamentos em consulta"
+                    info={EXTRA_HELP.fechamentosConsulta}
+                    value={b.fechamentosConsulta}
+                    rodape={
+                      <button
+                        type="button"
+                        data-abre-detalhe
+                        className="text-sm font-semibold text-brand-ink underline-offset-4 hover:underline"
+                      >
+                        Ver os fechamentos
+                      </button>
+                    }
+                  />
+                </FechamentosDetalhe>
               ),
             },
             {
               id: 'fechamentos_followup',
               label: 'Fechamentos em follow up',
               node: (
-                <CountCard
-                  icon={MessageCircleReply}
-                  label="Fechamentos em follow up"
-                  info={EXTRA_HELP.fechamentosFollowup}
-                  value={b.fechamentosFollowup}
-                />
+                <FechamentosDetalhe
+                  etapa="followup"
+                  etapaId={ETAPA_POS_CONSULTA_ID}
+                  inicio={periodVendas.fromIso}
+                  fim={periodVendas.toIso}
+                  vendedorId={vendedorId}
+                  periodo={periodLabel(periodVendas)}
+                >
+                  <CountCard
+                    icon={MessageCircleReply}
+                    label="Fechamentos em follow up"
+                    info={EXTRA_HELP.fechamentosFollowup}
+                    value={b.fechamentosFollowup}
+                    rodape={
+                      <button
+                        type="button"
+                        data-abre-detalhe
+                        className="text-sm font-semibold text-brand-ink underline-offset-4 hover:underline"
+                      >
+                        Ver os fechamentos
+                      </button>
+                    }
+                  />
+                </FechamentosDetalhe>
               ),
             },
           ]}
