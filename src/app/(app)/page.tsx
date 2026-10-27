@@ -512,15 +512,33 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                 label: 'Taxa de conversão na consulta',
                 node: (
                   <div className="h-full w-[300px] shrink-0 sm:w-[340px] [&>*]:h-full">
-                    <RateCard
-                      icon={FilePlus2}
-                      label="Taxa de conversão na consulta"
-                      help={EXTRA_HELP.conversaoConsulta}
-                      value={ratesB.conversaoConsulta}
-                      from="Consultas agendadas"
-                      to="Fechamentos em consulta"
-                      caption={`${plural(b.fechamentosConsulta, 'fechamento', 'fechamentos')} / ${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')}`}
-                    />
+                    <FechamentosDetalhe
+                      etapa="consulta"
+                      etapaId={ETAPA_CONSULTA_AGENDADA_ID}
+                      inicio={periodVendas.fromIso}
+                      fim={periodVendas.toIso}
+                      vendedorId={vendedorId}
+                      periodo={periodLabel(periodVendas)}
+                    >
+                      <RateCard
+                        icon={FilePlus2}
+                        label="Taxa de conversão na consulta"
+                        help={EXTRA_HELP.conversaoConsulta}
+                        value={ratesB.conversaoConsulta}
+                        from="Consultas agendadas"
+                        to="Fechamentos em consulta"
+                        caption={`${plural(b.fechamentosConsulta, 'fechamento', 'fechamentos')} / ${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')}`}
+                        rodape={
+                          <button
+                            type="button"
+                            data-abre-detalhe
+                            className="text-sm font-semibold text-brand-ink underline-offset-4 hover:underline"
+                          >
+                            Ver os fechamentos
+                          </button>
+                        }
+                      />
+                    </FechamentosDetalhe>
                   </div>
                 ),
               },
@@ -529,15 +547,33 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                 label: 'Taxa de conversão pós consulta',
                 node: (
                   <div className="h-full w-[300px] shrink-0 sm:w-[340px] [&>*]:h-full">
-                    <RateCard
-                      icon={MessageCircleReply}
-                      label="Taxa de conversão pós consulta"
-                      help={EXTRA_HELP.conversaoPosConsulta}
-                      value={ratesB.conversaoPosConsulta}
-                      from="Pós consulta"
-                      to="Fechamentos em follow up"
-                      caption={`${plural(b.fechamentosFollowup, 'fechamento', 'fechamentos')} / ${plural(b.posConsultaN, 'oportunidade', 'oportunidades')}`}
-                    />
+                    <FechamentosDetalhe
+                      etapa="followup"
+                      etapaId={ETAPA_POS_CONSULTA_ID}
+                      inicio={periodVendas.fromIso}
+                      fim={periodVendas.toIso}
+                      vendedorId={vendedorId}
+                      periodo={periodLabel(periodVendas)}
+                    >
+                      <RateCard
+                        icon={MessageCircleReply}
+                        label="Taxa de conversão pós consulta"
+                        help={EXTRA_HELP.conversaoPosConsulta}
+                        value={ratesB.conversaoPosConsulta}
+                        from="Pós consulta"
+                        to="Fechamentos em follow up"
+                        caption={`${plural(b.fechamentosFollowup, 'fechamento', 'fechamentos')} / ${plural(b.posConsultaN, 'oportunidade', 'oportunidades')}`}
+                        rodape={
+                          <button
+                            type="button"
+                            data-abre-detalhe
+                            className="text-sm font-semibold text-brand-ink underline-offset-4 hover:underline"
+                          >
+                            Ver os fechamentos
+                          </button>
+                        }
+                      />
+                    </FechamentosDetalhe>
                   </div>
                 ),
               },

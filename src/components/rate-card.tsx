@@ -69,6 +69,7 @@ export function RateCard({
   from,
   to,
   caption,
+  rodape,
 }: {
   icon: LucideIcon
   label: string
@@ -77,6 +78,8 @@ export function RateCard({
   from: string
   to: string
   caption: string
+  /** Ação no pé do cartão (por exemplo, "Ver os fechamentos"). */
+  rodape?: React.ReactNode
 }) {
   // O cartão se adapta à largura que tem (container query): largo, o anel fica na direita, centrado;
   // estreito (cinco cartões numa linha), o anel diminui e vai para a linha do número.
@@ -118,6 +121,8 @@ export function RateCard({
             Sem base para cálculo
           </p>
         ) : null}
+
+        {rodape ? <div className="col-start-1 row-start-6 mt-3 @max-[330px]:col-span-2">{rodape}</div> : null}
       </div>
     </div>
   )
