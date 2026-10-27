@@ -174,14 +174,24 @@ body {
     --bar-b: #9ca3af;
   }
 
-  /* Esconde a barra de rolagem nativa sem desligar a rolagem (usado na faixa de arrasto
-     de Taxas, DragScrollRow): o arrasto continua funcionando, só a barra cinza some. */
-  .scrollbar-hide {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+  /* Barra de rolagem fina e na cor da marca, em vez da barra cinza padrão do sistema
+     (usado na faixa de arrasto de Taxas, DragScrollRow). scrollbar-width: thin é o
+     equivalente mais fino que o Firefox aceita (não dá para pedir um valor em px nele);
+     no Chrome/Edge (baseados em WebKit/Blink) o ::-webkit-scrollbar controla a altura
+     exata em px. */
+  .scrollbar-brand {
+    scrollbar-width: thin;
+    scrollbar-color: var(--brand) transparent;
   }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  .scrollbar-brand::-webkit-scrollbar {
+    height: 1px;
+  }
+  .scrollbar-brand::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-brand::-webkit-scrollbar-thumb {
+    background: var(--brand);
+    border-radius: 9999px;
   }
 }
 
