@@ -19,6 +19,7 @@ export type SyncCounts = {
   contatos: number
   oportunidades: number
   agendamentos: number
+  agendamentosExcluidos: number
 }
 
 const DIA_MS = 86_400_000
@@ -28,6 +29,29 @@ async function upsert(admin: SupabaseClient, table: string, rows: unknown[]) {
   if (rows.length === 0) return
   const { error } = await admin.from(table).upsert(rows, { onConflict: 'id' })
   if (error) throw new Error(`Falha ao gravar ${table}: ${error.message}`)
+}
+
+// O upsert só grava e atualiza: um registro excluído no GHL (ex.: um agendamento de teste
+// apagado do calendário) nunca some do nosso banco sozinho, porque nenhuma chamada de sync volta
+// a mencionar o id dele. Depois de sincronizar uma janela de datas inteira, isso apaga do banco
+// quem está nessa mesma janela mas não veio na resposta do GHL dessa vez. Só mexe na janela que
+// acabou de ser sincronizada (pela mesma coluna de data usada no filtro da chamada ao GHL), nunca
+// em registros de fora dela.
+async function removerAusentes(
+  admin: SupabaseClient,
+  table: string,
+  colunaData: string,
+  desde: string,
+  ate: string,
+  idsVistos: ReadonlySet<string>,
+): Promise<number> {
+  const { data: existentes, error } = await admin.from(table).select('id').gte(colunaData, desde).lt(colunaData, ate)
+  if (error) throw new Error(`Falha ao conferir ${table}: ${error.message}`)
+  const idsParaExcluir = (existentes ?? []).map((r) => r.id as string).filter((id) => !idsVistos.has(id))
+  if (idsParaExcluir.length === 0) return 0
+  const { error: delError } = await admin.from(table).delete().in('id', idsParaExcluir)
+  if (delError) throw new Error(`Falha ao excluir ${table}: ${delError.message}`)
+  return idsParaExcluir.length
 }
 
 // Colunas de oportunidades criadas por migrations recentes. Se o banco ainda não as tem, o sync segue
@@ -52,7 +76,7 @@ function semColunas(row: OportunidadeRow, ausentes: string[]): Partial<Oportunid
 // Sync completo e idempotente: rodar duas vezes não duplica registros.
 export async function runSync(admin: SupabaseClient): Promise<SyncCounts> {
   const { locationId } = ghlCredentials()
-  const counts: SyncCounts = { usuarios: 0, contatos: 0, oportunidades: 0, agendamentos: 0 }
+  const counts: SyncCounts = { usuarios: 0, contatos: 0, oportunidades: 0, agendamentos: 0, agendamentosExcluidos: 0 }
 
   // Usuários (vendedores definidos por GHL_VENDEDORES_IDS)
   const userRes = await ghlGet<{ users?: Raw[] }>(`/users/?locationId=${locationId}`)
@@ -96,6 +120,7 @@ export async function runSync(admin: SupabaseClient): Promise<SyncCounts> {
   const agora = Date.now()
   const inicio = agora - EVENTOS_DIAS_PASSADO * DIA_MS
   const fim = agora + EVENTOS_DIAS_FUTURO * DIA_MS
+  const idsVistos = new Set<string>()
   for (const cal of calendarRes.calendars ?? []) {
     for (let de = inicio; de < fim; de += JANELA_EVENTOS_MS) {
       const ate = Math.min(de + JANELA_EVENTOS_MS, fim)
@@ -103,10 +128,19 @@ export async function runSync(admin: SupabaseClient): Promise<SyncCounts> {
         `/calendars/events?locationId=${locationId}&calendarId=${cal.id}&startTime=${de}&endTime=${ate}`,
       )
       const rows = (res.events ?? []).map(mapEvent).filter((r): r is AgendamentoRow => r !== null)
+      for (const r of rows) idsVistos.add(r.id)
       await upsert(admin, 'agendamentos', rows)
       counts.agendamentos += rows.length
     }
   }
+  counts.agendamentosExcluidos = await removerAusentes(
+    admin,
+    'agendamentos',
+    'data_inicio',
+    new Date(inicio).toISOString(),
+    new Date(fim).toISOString(),
+    idsVistos,
+  )
 
   return counts
 }
