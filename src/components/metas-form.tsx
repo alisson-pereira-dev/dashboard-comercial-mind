@@ -19,6 +19,7 @@ import { loadMetas, saveMetas, type MetasValores } from '@/lib/metas-actions'
 import {
   editar,
   modoInicial,
+  precoConsultaDe,
   taxasDe,
   TAXAS_VAZIAS,
   type Campo,
@@ -198,6 +199,7 @@ export function MetasForm({
   const [valores, setValores] = useState<MetasValores>(valoresIniciais)
   const [original, setOriginal] = useState<MetasValores>(valoresIniciais)
   const [taxas, setTaxas] = useState<Taxas>(() => taxasDe(valoresIniciais))
+  const [precoConsulta, setPrecoConsulta] = useState<number | null>(() => precoConsultaDe(valoresIniciais))
   const [modo, setModo] = useState<Modo>(() => modoInicial(valoresIniciais))
   const [auto, setAuto] = useState<ReadonlySet<MetricKey>>(new Set())
   const [carregando, setCarregando] = useState(false)
@@ -225,6 +227,7 @@ export function MetasForm({
     setValores(VAZIO)
     setOriginal(VAZIO)
     setTaxas(TAXAS_VAZIAS)
+    setPrecoConsulta(null)
     setAuto(new Set())
     setCarregando(true)
     setMensagem(null)
@@ -235,6 +238,7 @@ export function MetasForm({
       setValores(r.valores)
       setOriginal(r.valores)
       setTaxas(taxasDe(r.valores))
+      setPrecoConsulta(precoConsultaDe(r.valores))
       setModo(modoInicial(r.valores))
     } else {
       setValores(VAZIO)
@@ -245,9 +249,10 @@ export function MetasForm({
   }
 
   function editarCampo(campo: Campo, texto: string) {
-    const r = editar({ valores, taxas }, campo, texto, modo)
+    const r = editar({ valores, taxas, precoConsulta }, campo, texto, modo)
     setValores(r.valores)
     setTaxas(r.taxas)
+    setPrecoConsulta(r.precoConsulta)
     setAuto(new Set(r.auto))
     setMensagem(null)
   }
@@ -274,6 +279,7 @@ export function MetasForm({
   function desfazer() {
     setValores(original)
     setTaxas(taxasDe(original))
+    setPrecoConsulta(precoConsultaDe(original))
     setModo(modoInicial(original))
     setAuto(new Set())
     setMensagem(null)

@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { METRIC_KEYS } from './metrics/types'
-import { agendamentoSobreLeads, editar, modoInicial, taxasDe, TAXAS_VAZIAS, type Estado, type Valores } from './metas-edit'
+import {
+  agendamentoSobreLeads,
+  editar,
+  modoInicial,
+  precoConsultaDe,
+  taxasDe,
+  TAXAS_VAZIAS,
+  type Estado,
+  type Valores,
+} from './metas-edit'
 
 const vazio = Object.fromEntries(METRIC_KEYS.map((k) => [k, ''])) as Valores
 
@@ -12,7 +21,7 @@ const base: Valores = {
   comparecimentos: '10',
   vendas: '5',
 }
-const estado = (): Estado => ({ valores: { ...base }, taxas: taxasDe(base) })
+const estado = (): Estado => ({ valores: { ...base }, taxas: taxasDe(base), precoConsulta: precoConsultaDe(base) })
 
 describe('taxasDe', () => {
   it('calcula a taxa implícita nos valores', () => {
@@ -82,14 +91,14 @@ describe('editar: taxas', () => {
   })
 
   it('taxa sem base preenchida só guarda o texto', () => {
-    const r = editar({ valores: { ...vazio }, taxas: { ...TAXAS_VAZIAS } }, { tipo: 'taxa', chave: 'qualificacao' }, '30')
+    const r = editar({ valores: { ...vazio }, taxas: { ...TAXAS_VAZIAS }, precoConsulta: null }, { tipo: 'taxa', chave: 'qualificacao' }, '30')
     expect(r.taxas.qualificacao).toBe('30')
     expect(r.valores.leads_qualificados).toBe('')
     expect(r.auto).toEqual([])
   })
 
   it('preencher só os leads e as taxas monta o funil inteiro', () => {
-    let e: Estado = { valores: { ...vazio }, taxas: { ...TAXAS_VAZIAS } }
+    let e: Estado = { valores: { ...vazio }, taxas: { ...TAXAS_VAZIAS }, precoConsulta: null }
     for (const [chave, texto] of [['qualificacao', '40'], ['agendamento', '50'], ['comparecimento', '50'], ['conversao', '50']] as const) {
       e = editar(e, { tipo: 'taxa', chave }, texto)
     }
@@ -121,23 +130,26 @@ describe('editar: faturamento', () => {
     expect(e.valores.faturamento_total).toBe('')
   })
 
-  it('mudar consultas novas recalcula em consultas mantendo o valor por consulta', () => {
+  it('quantidade ainda em branco: o valor de em consultas digitado vira o valor por consulta', () => {
+    // Mesmo cenário do card: Em consultas = 480 com Consultas novas em branco (mostra "0" de
+    // placeholder). Trocar a quantidade deve multiplicar esse 480 na hora, pra mais ou pra menos.
     let e: ReturnType<typeof editar> = { ...estado(), auto: [] }
-    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '4800')
-    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '15')
-    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '20')
-    expect(e.valores.faturamento_consultas).toBe('6400') // 4800 / 15 x 20
-    expect(e.valores.faturamento_total).toBe('6400')
+    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '480')
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '10')
+    expect(e.valores.faturamento_consultas).toBe('4800') // 480 x 10
+    expect(e.valores.faturamento_total).toBe('4800')
     expect(e.auto).toContain('faturamento_consultas')
     expect(e.auto).toContain('faturamento_total')
   })
 
-  it('sem quantidade anterior, mudar consultas novas não mexe em em consultas', () => {
+  it('com quantidade já definida, trocar consultas novas mantém o valor por consulta (pra mais ou pra menos)', () => {
     let e: ReturnType<typeof editar> = { ...estado(), auto: [] }
-    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '4800')
+    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '480')
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '10') // vira 4800 (480 x 10)
     e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '15')
-    expect(e.valores.faturamento_consultas).toBe('4800')
-    expect(e.auto).not.toContain('faturamento_consultas')
+    expect(e.valores.faturamento_consultas).toBe('7200') // 4800 / 10 x 15 = 480 x 15
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '4')
+    expect(e.valores.faturamento_consultas).toBe('1920') // 480 x 4, também funciona pra menos
   })
 
   it('sem preço anterior em consultas, mudar consultas novas não cria um valor', () => {
@@ -147,13 +159,32 @@ describe('editar: faturamento', () => {
     expect(e.valores.faturamento_consultas).toBe('')
   })
 
+  it('consultas novas em branco não mexe em em consultas', () => {
+    let e: ReturnType<typeof editar> = { ...estado(), auto: [] }
+    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '480')
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '10')
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '')
+    expect(e.valores.faturamento_consultas).toBe('4800')
+  })
+
+  it('apagar consultas novas e digitar de novo mantém o valor por consulta certo (não dobra)', () => {
+    // Regressão: apagar o campo para digitar de novo não pode fazer o sistema achar que o total já
+    // calculado (4800) é o novo valor por consulta na próxima digitação.
+    let e: ReturnType<typeof editar> = { ...estado(), auto: [] }
+    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '480')
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '10') // vira 4800 (480 x 10)
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '') // apaga para digitar de novo
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '4')
+    expect(e.valores.faturamento_consultas).toBe('1920') // 480 x 4, não 4800 x 4
+  })
+
   it('editar em consultas direto muda o valor por consulta usado depois', () => {
     let e: ReturnType<typeof editar> = { ...estado(), auto: [] }
-    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '4800')
-    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '15')
-    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '3000') // 200 por consulta
-    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '10')
-    expect(e.valores.faturamento_consultas).toBe('2000')
+    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '480')
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '10') // vira 4800, 480 por consulta
+    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '3000') // agora 300 por consulta
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '5')
+    expect(e.valores.faturamento_consultas).toBe('1500') // 300 x 5
   })
 })
 

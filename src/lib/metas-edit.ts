@@ -37,7 +37,13 @@ export const ETAPAS_FUNIL: MetricKey[] = ['leads', 'leads_qualificados', 'consul
 export const TAXAS_VAZIAS: Taxas = { qualificacao: '', agendamento: '', comparecimento: '', conversao: '' }
 
 export type Campo = { tipo: 'valor'; chave: MetricKey } | { tipo: 'taxa'; chave: TaxaKey }
-export type Estado = { valores: Valores; taxas: Taxas }
+// precoConsulta: valor por consulta usado para recalcular Em consultas quando Consultas novas
+// muda. Só é redefinido quando o usuário edita Em consultas direto (nunca por uma edição de
+// Consultas novas); por isso precisa viajar no estado, em vez de ser derivado de novo a cada
+// edição a partir dos dois campos: depois que Em consultas já foi multiplicado uma vez, ele deixa
+// de ser "o preço de uma consulta" e vira um total, e dividir de novo por uma quantidade zerada ou
+// em branco (ex.: campo apagado para digitar de novo) devolveria um valor por consulta errado.
+export type Estado = { valores: Valores; taxas: Taxas; precoConsulta: number | null }
 
 // Número válido (zero ou mais) ou null para vazio e texto inválido.
 function num(texto: string): number | null {
@@ -49,6 +55,17 @@ function num(texto: string): number | null {
 
 const inteiro = (n: number) => String(Math.round(n))
 const duasCasas = (n: number) => String(Math.round(n * 100) / 100)
+
+// Valor por consulta implícito em Em consultas e Consultas novas (ex.: R$ 4.800 para 10 consultas
+// = R$ 480 por consulta). Sem quantidade preenchida ainda, o próprio Em consultas é o valor por
+// consulta (não há pelo que dividir). Usado para montar o estado inicial, ao carregar um mês ou
+// desfazer alterações; dali em diante, editar() mantém o valor por consulta sozinho.
+export function precoConsultaDe(valores: Valores): number | null {
+  const preco = num(valores.faturamento_consultas)
+  if (preco === null) return null
+  const qtd = num(valores.consultas_novas)
+  return qtd !== null && qtd > 0 ? preco / qtd : preco
+}
 
 // Taxas implícitas nos valores (ex.: 87 qualificados de 150 leads = 58%).
 export function taxasDe(valores: Valores): Taxas {
@@ -78,10 +95,12 @@ export function modoInicial(valores: Valores): Modo {
  * - Editar uma etapa só muda aquela etapa; as taxas são recalculadas apenas para exibição.
  * Nos dois modos:
  * - Editar faturamento em consultas ou em tratamentos faz o total virar a soma dos dois.
- * - Editar consultas novas recalcula o faturamento em consultas, mantendo o valor por consulta
- *   que já estava nos dois campos (valor antigo ÷ quantidade antiga × quantidade nova), e o total
- *   junto. Só funciona se os dois campos já tinham algo preenchido; senão não há valor por
- *   consulta para manter, e o campo de faturamento não muda sozinho.
+ * - Editar consultas novas recalcula o faturamento em consultas na hora (valor por consulta ×
+ *   nova quantidade), e o total junto. O valor por consulta vem de `precoConsultaDe` (Em consultas
+ *   ÷ Consultas novas, ou o próprio Em consultas se a quantidade ainda estiver em branco) e só é
+ *   redefinido quando o usuário edita Em consultas direto; editar Consultas novas nunca o toca, só
+ *   o usa. Assim o valor por consulta sobrevive mesmo se Consultas novas for apagado e digitado de
+ *   novo no meio do caminho. Sem um valor por consulta ainda definido, nada é calculado sozinho.
  * - Valores em branco ou inválidos nunca disparam cálculo.
  */
 export function editar(
@@ -93,6 +112,7 @@ export function editar(
   const valores: Valores = { ...estado.valores }
   const taxas: Taxas = { ...estado.taxas }
   const auto = new Set<MetricKey>()
+  let precoConsulta = estado.precoConsulta
 
   const propagar = (origem: MetricKey) => {
     for (const t of TAXAS) {
@@ -109,12 +129,14 @@ export function editar(
   if (campo.tipo === 'valor') {
     valores[campo.chave] = texto
 
+    if (campo.chave === 'faturamento_consultas') {
+      precoConsulta = precoConsultaDe(valores)
+    }
+
     if (campo.chave === 'consultas_novas') {
-      const precoAntigo = num(estado.valores.faturamento_consultas)
-      const qtdAntiga = num(estado.valores.consultas_novas)
       const qtdNova = num(texto)
-      if (precoAntigo !== null && qtdAntiga !== null && qtdAntiga > 0 && qtdNova !== null) {
-        valores.faturamento_consultas = duasCasas((precoAntigo / qtdAntiga) * qtdNova)
+      if (precoConsulta !== null && qtdNova !== null) {
+        valores.faturamento_consultas = duasCasas(precoConsulta * qtdNova)
         auto.add('faturamento_consultas')
       }
     }
@@ -127,7 +149,7 @@ export function editar(
     }
 
     if (modo === 'manual') {
-      return { valores, taxas: taxasDe(valores), auto: [...auto] }
+      return { valores, taxas: taxasDe(valores), precoConsulta, auto: [...auto] }
     }
 
     for (const t of TAXAS) {
@@ -149,5 +171,5 @@ export function editar(
     }
   }
 
-  return { valores, taxas, auto: [...auto] }
+  return { valores, taxas, precoConsulta, auto: [...auto] }
 }
