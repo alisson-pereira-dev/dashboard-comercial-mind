@@ -30,6 +30,7 @@ import {
   todayBR,
 } from '@/lib/metrics'
 import type { Period } from '@/lib/metrics'
+import { metaTratamentosNovos } from '@/lib/metrics/tratamentos-novos'
 import { formatDateTime, formatInt, formatMoney, periodLabel } from '@/lib/format'
 import { GoalCard, CountCard } from '@/components/goal-card'
 import { ConsultasDetalhe } from '@/components/consultas-detalhe'
@@ -191,6 +192,13 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
     posConsultaN: a.posConsultaN,
   })
   const idealRates = funnelRatesFromGoals(metas)
+  // Tratamentos novos não tem meta própria: vem da meta de Em tratamentos (R$) dividida pelo preço
+  // médio por tratamento do período (ver src/lib/metrics/tratamentos-novos.ts).
+  const metaTratamentosNovosValor = metaTratamentosNovos(
+    metas.faturamento_tratamentos,
+    a.faturamento_tratamentos,
+    a.tratamentosNovos,
+  )
 
   return (
     <main className="w-full space-y-5 px-4 py-6 lg:px-1 lg:py-1">
@@ -377,11 +385,14 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
               id: 'tratamentos_novos',
               label: 'Tratamentos novos',
               node: (
-                <CountCard
+                <GoalCard
+                  standalone
+                  compacto
                   icon={FilePlus2}
                   label="Tratamentos novos"
-                  info={EXTRA_HELP.tratamentosNovos}
-                  value={a.tratamentosNovos}
+                  info={`${EXTRA_HELP.tratamentosNovos} A meta vem da meta de Em tratamentos (R$), dividida pelo preço médio por tratamento do período.`}
+                  realizado={a.tratamentosNovos}
+                  meta={metaTratamentosNovosValor}
                 />
               ),
             },
