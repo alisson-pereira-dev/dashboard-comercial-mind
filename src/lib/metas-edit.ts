@@ -19,7 +19,7 @@ export type Modo = 'automatico' | 'manual'
 // qualificados; comparecimento, sobre as consultas agendadas; conversão, sobre os comparecimentos.
 export const TAXAS: { key: TaxaKey; base: MetricKey; alvo: MetricKey; nome: string; formula: string }[] = [
   { key: 'qualificacao', base: 'leads', alvo: 'leads_qualificados', nome: 'qualificação', formula: 'Leads qualificados ÷ leads' },
-  { key: 'agendamento', base: 'leads_qualificados', alvo: 'consultas_agendadas', nome: 'agendamento', formula: 'Consultas agendadas ÷ leads qualificados' },
+  { key: 'agendamento', base: 'leads_qualificados', alvo: 'consultas_agendadas', nome: 'agendamento MQL', formula: 'Consultas agendadas ÷ leads qualificados' },
   { key: 'comparecimento', base: 'consultas_agendadas', alvo: 'comparecimentos', nome: 'comparecimento', formula: 'Comparecimentos ÷ consultas agendadas' },
   { key: 'conversao', base: 'comparecimentos', alvo: 'vendas', nome: 'conversão', formula: 'Vendas ÷ comparecimentos' },
 ]

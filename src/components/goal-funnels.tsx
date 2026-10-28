@@ -29,7 +29,7 @@ export const RATE_CHIP_RISE = 9
 const REAL_BG = ['#0B7F98', '#27C2DA', '#6ED9EB', '#9BE5F1', '#BFEFF7']
 export const GOAL_BG = '#BDEBFA'
 
-const RATE_NAMES = ['qualificação', 'agendamento', 'comparecimento', 'conversão'] as const
+const RATE_NAMES = ['qualificação', 'agendamento MQL', 'comparecimento', 'conversão'] as const
 const RATE_TITLES = [
   'Leads qualificados ÷ leads',
   'Consultas agendadas ÷ leads qualificados (do MQL para a consulta)',

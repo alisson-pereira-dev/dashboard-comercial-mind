@@ -144,7 +144,7 @@ Fluxo do sync: buscar no GHL, mapear, gravar por upsert no Supabase (chave = id 
 **Taxas** (calculadas por nós, a API não entrega)
 
 - Taxa de qualificação = leads qualificados / leads
-- Taxa de agendamento = consultas agendadas / leads qualificados (decisão de 22/10/2026; antes era sobre os leads)
+- Taxa de agendamento = consultas agendadas / leads qualificados (decisão de 22/10/2026; antes era sobre os leads). O balão dessa taxa nos dois funis (`RATE_NAMES` em `goal-funnels.tsx`, e `TAXAS` em `metas-edit.ts` para o funil da página de Metas) mostra "agendamento MQL" (renomeado em 28/10/2026, antes só "agendamento"), para bater com o nome do cartão "Taxa de agendamento de MQL".
 - Taxa de agendamento sobre os leads = consultas agendadas / leads (`Rates.agendamentoLead`). Aparece no funil (balão à esquerda com uma seta curva de Leads até Consultas agendadas, `ArrowSpan` em `goal-funnels.tsx`), na página de Metas (somente leitura, não calcula etapas) e num cartão do bloco de taxas ("Taxa de agendamento de leads"; o cartão da taxa sobre os qualificados chama-se "Taxa de agendamento de MQL")
 - Taxa de comparecimento = comparecimentos / consultas agendadas
 - Taxa de conversão na consulta = fechamentos em consulta / **consultas agendadas** (decisão de 27/10/2026, 2ª correção no mesmo dia; passou primeiro por vendas/comparecimentos e depois por fechamentos/comparecimentos, antes de chegar nessa fórmula final). Fechamentos em consulta são as oportunidades ganhas na etapa Consulta Agendada; consultas agendadas é o MESMO número do card do funil (oportunidades que estão nessa etapa).
