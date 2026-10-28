@@ -9,11 +9,11 @@ const base =
 const inativo = 'text-muted hover:bg-black/[0.04] hover:text-navy'
 
 const ITENS = [
-  { href: '/', label: 'Dashboard', Icone: LayoutDashboard },
+  { href: '/', label: 'Realizados', Icone: LayoutDashboard },
   { href: '/metas', label: 'Metas', Icone: Target },
 ]
 
-// Menu do app: Dashboard e Metas, cada uma com a própria página.
+// Menu do app: Realizados (dashboard, rota "/") e Metas, cada uma com a própria página.
 export function NavLinks({ direction }: { direction: 'vertical' | 'horizontal' }) {
   const pathname = usePathname()
 
