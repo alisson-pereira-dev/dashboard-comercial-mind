@@ -73,7 +73,7 @@ describe('getDashboardData com a função dashboard_resumo', () => {
       comparecimentos: 0,
       vendas: 0,
       consultas_novas: 9,
-      tratamentosNovos: 0,
+      tratamentos_novos: 0,
       fechamentosConsulta: 0,
       fechamentosFollowup: 0,
       posConsultaN: 3,
@@ -117,7 +117,7 @@ describe('getDashboardData com a função dashboard_resumo', () => {
     const d = await getDashboardData({ rpc } as unknown as SupabaseClient, periodo, null)
     expect(d.realizado.fechamentosConsulta).toBe(8)
     expect(d.realizado.fechamentosFollowup).toBe(4)
-    expect(d.realizado.fechamentosConsulta + d.realizado.fechamentosFollowup).toBe(d.realizado.tratamentosNovos)
+    expect(d.realizado.fechamentosConsulta + d.realizado.fechamentosFollowup).toBe(d.realizado.tratamentos_novos)
   })
 
   it('repassa o vendedor escolhido para a função', async () => {

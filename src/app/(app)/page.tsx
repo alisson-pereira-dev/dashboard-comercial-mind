@@ -377,11 +377,14 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
               id: 'tratamentos_novos',
               label: 'Tratamentos novos',
               node: (
-                <CountCard
+                <GoalCard
+                  standalone
+                  compacto
                   icon={FilePlus2}
                   label="Tratamentos novos"
-                  info={EXTRA_HELP.tratamentosNovos}
-                  value={a.tratamentosNovos}
+                  info={METRIC_HELP.tratamentos_novos}
+                  realizado={a.tratamentos_novos}
+                  meta={metas.tratamentos_novos}
                 />
               ),
             },

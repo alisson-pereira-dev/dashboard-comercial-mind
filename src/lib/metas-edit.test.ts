@@ -5,6 +5,7 @@ import {
   editar,
   modoInicial,
   precoConsultaDe,
+  precoTratamentoDe,
   taxasDe,
   TAXAS_VAZIAS,
   type Estado,
@@ -21,7 +22,12 @@ const base: Valores = {
   comparecimentos: '10',
   vendas: '5',
 }
-const estado = (): Estado => ({ valores: { ...base }, taxas: taxasDe(base), precoConsulta: precoConsultaDe(base) })
+const estado = (): Estado => ({
+  valores: { ...base },
+  taxas: taxasDe(base),
+  precoConsulta: precoConsultaDe(base),
+  precoTratamento: precoTratamentoDe(base),
+})
 
 describe('taxasDe', () => {
   it('calcula a taxa implícita nos valores', () => {
@@ -91,14 +97,14 @@ describe('editar: taxas', () => {
   })
 
   it('taxa sem base preenchida só guarda o texto', () => {
-    const r = editar({ valores: { ...vazio }, taxas: { ...TAXAS_VAZIAS }, precoConsulta: null }, { tipo: 'taxa', chave: 'qualificacao' }, '30')
+    const r = editar({ valores: { ...vazio }, taxas: { ...TAXAS_VAZIAS }, precoConsulta: null, precoTratamento: null }, { tipo: 'taxa', chave: 'qualificacao' }, '30')
     expect(r.taxas.qualificacao).toBe('30')
     expect(r.valores.leads_qualificados).toBe('')
     expect(r.auto).toEqual([])
   })
 
   it('preencher só os leads e as taxas monta o funil inteiro', () => {
-    let e: Estado = { valores: { ...vazio }, taxas: { ...TAXAS_VAZIAS }, precoConsulta: null }
+    let e: Estado = { valores: { ...vazio }, taxas: { ...TAXAS_VAZIAS }, precoConsulta: null, precoTratamento: null }
     for (const [chave, texto] of [['qualificacao', '40'], ['agendamento', '50'], ['comparecimento', '50'], ['conversao', '50']] as const) {
       e = editar(e, { tipo: 'taxa', chave }, texto)
     }
@@ -185,6 +191,29 @@ describe('editar: faturamento', () => {
     e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '3000') // agora 300 por consulta
     e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '5')
     expect(e.valores.faturamento_consultas).toBe('1500') // 300 x 5
+  })
+
+  // Mesmo mecanismo de Em consultas / Consultas novas, agora para Em tratamentos / Tratamentos novos.
+  it('tratamentos novos recalcula em tratamentos do mesmo jeito que consultas novas recalcula em consultas', () => {
+    let e: ReturnType<typeof editar> = { ...estado(), auto: [] }
+    e = editar(e, { tipo: 'valor', chave: 'faturamento_tratamentos' }, '2000')
+    e = editar(e, { tipo: 'valor', chave: 'tratamentos_novos' }, '4')
+    expect(e.valores.faturamento_tratamentos).toBe('8000') // 2000 x 4
+    expect(e.auto).toContain('faturamento_tratamentos')
+    e = editar(e, { tipo: 'valor', chave: 'tratamentos_novos' }, '') // apaga para digitar de novo
+    e = editar(e, { tipo: 'valor', chave: 'tratamentos_novos' }, '2')
+    expect(e.valores.faturamento_tratamentos).toBe('4000') // 2000 x 2, não 8000 x 2 (não dobra)
+  })
+
+  it('consultas novas e tratamentos novos não se misturam', () => {
+    let e: ReturnType<typeof editar> = { ...estado(), auto: [] }
+    e = editar(e, { tipo: 'valor', chave: 'faturamento_consultas' }, '480')
+    e = editar(e, { tipo: 'valor', chave: 'faturamento_tratamentos' }, '2000')
+    e = editar(e, { tipo: 'valor', chave: 'consultas_novas' }, '10')
+    e = editar(e, { tipo: 'valor', chave: 'tratamentos_novos' }, '3')
+    expect(e.valores.faturamento_consultas).toBe('4800') // 480 x 10
+    expect(e.valores.faturamento_tratamentos).toBe('6000') // 2000 x 3
+    expect(e.valores.faturamento_total).toBe('10800')
   })
 })
 
