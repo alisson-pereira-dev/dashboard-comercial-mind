@@ -9,9 +9,9 @@ import {
 import { faturamentoConsultas } from '@/lib/metrics/faturamento'
 import { METRIC_KEYS, type MetricKey, type Period } from '@/lib/metrics'
 
-// A chave tratamentos_novos do Record<MetricKey, number> (ganhas no período que estão nas etapas
-// Consulta Agendada ou Pós consulta) é a mesma usada como meta na página de Metas.
 export type Realizado = Record<MetricKey, number> & {
+  /** Ganhas (no período) que estão nas etapas Consulta Agendada ou Pós consulta. */
+  tratamentosNovos: number
   /** Ganhas (no período) que estão na etapa "Consulta Agendada". */
   fechamentosConsulta: number
   /** Ganhas (no período) que estão na etapa "Pós consulta". */
@@ -159,7 +159,7 @@ export async function getDashboardData(
       faturamento_tratamentos: tratamentoValor,
       faturamento_total: consultasValor + tratamentoValor,
       consultas_novas: r.consultas_n,
-      tratamentos_novos: r.consultas_ganhas,
+      tratamentosNovos: r.consultas_ganhas,
       fechamentosConsulta: r.fechamentos_consulta,
       fechamentosFollowup: r.fechamentos_followup,
       posConsultaN: r.pos_consulta_n,

@@ -5,7 +5,6 @@ export const METRIC_KEYS = [
   'comparecimentos',
   'vendas',
   'consultas_novas',
-  'tratamentos_novos',
   'faturamento_consultas',
   'faturamento_tratamentos',
   'faturamento_total',

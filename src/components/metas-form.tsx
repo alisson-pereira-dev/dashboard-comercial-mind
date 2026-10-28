@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  FilePlus2,
   FileText,
   Info,
   Pencil,
@@ -21,7 +20,6 @@ import {
   editar,
   modoInicial,
   precoConsultaDe,
-  precoTratamentoDe,
   taxasDe,
   TAXAS_VAZIAS,
   type Campo,
@@ -55,7 +53,6 @@ const FATURAMENTO: {
   { chave: 'faturamento_tratamentos', rotulo: 'Em tratamentos', Icone: FileText },
   { chave: 'faturamento_total', rotulo: 'Total', Icone: BarChart3, destaque: true },
   { chave: 'consultas_novas', rotulo: 'Consultas novas', Icone: CalendarPlus, quantidade: true },
-  { chave: 'tratamentos_novos', rotulo: 'Tratamentos novos', Icone: FilePlus2, quantidade: true },
 ]
 
 const iguais = (a: MetasValores, b: MetasValores) => METRIC_KEYS.every((k) => a[k] === b[k])
@@ -203,7 +200,6 @@ export function MetasForm({
   const [original, setOriginal] = useState<MetasValores>(valoresIniciais)
   const [taxas, setTaxas] = useState<Taxas>(() => taxasDe(valoresIniciais))
   const [precoConsulta, setPrecoConsulta] = useState<number | null>(() => precoConsultaDe(valoresIniciais))
-  const [precoTratamento, setPrecoTratamento] = useState<number | null>(() => precoTratamentoDe(valoresIniciais))
   const [modo, setModo] = useState<Modo>(() => modoInicial(valoresIniciais))
   const [auto, setAuto] = useState<ReadonlySet<MetricKey>>(new Set())
   const [carregando, setCarregando] = useState(false)
@@ -232,7 +228,6 @@ export function MetasForm({
     setOriginal(VAZIO)
     setTaxas(TAXAS_VAZIAS)
     setPrecoConsulta(null)
-    setPrecoTratamento(null)
     setAuto(new Set())
     setCarregando(true)
     setMensagem(null)
@@ -244,7 +239,6 @@ export function MetasForm({
       setOriginal(r.valores)
       setTaxas(taxasDe(r.valores))
       setPrecoConsulta(precoConsultaDe(r.valores))
-      setPrecoTratamento(precoTratamentoDe(r.valores))
       setModo(modoInicial(r.valores))
     } else {
       setValores(VAZIO)
@@ -255,11 +249,10 @@ export function MetasForm({
   }
 
   function editarCampo(campo: Campo, texto: string) {
-    const r = editar({ valores, taxas, precoConsulta, precoTratamento }, campo, texto, modo)
+    const r = editar({ valores, taxas, precoConsulta }, campo, texto, modo)
     setValores(r.valores)
     setTaxas(r.taxas)
     setPrecoConsulta(r.precoConsulta)
-    setPrecoTratamento(r.precoTratamento)
     setAuto(new Set(r.auto))
     setMensagem(null)
   }
@@ -287,7 +280,6 @@ export function MetasForm({
     setValores(original)
     setTaxas(taxasDe(original))
     setPrecoConsulta(precoConsultaDe(original))
-    setPrecoTratamento(precoTratamentoDe(original))
     setModo(modoInicial(original))
     setAuto(new Set())
     setMensagem(null)
@@ -437,10 +429,9 @@ export function MetasForm({
           </div>
           <p className="mt-3 text-xs text-muted">
             O total é a soma das metas de consultas e de tratamentos e muda sozinho quando você as altera. Você pode ajustá-lo à
-            mão. Consultas novas e Tratamentos novos são quantidades, não valores em reais. Se Em consultas e Consultas novas (ou
-            Em tratamentos e Tratamentos novos) já tiverem valor, mudar a quantidade recalcula o valor em reais sozinho,
-            mantendo o mesmo valor por unidade (edite o valor em reais direto para mudar esse valor por unidade). Arraste pela
-            alça no canto de cada cartão para reordenar.
+            mão. Consultas novas é uma quantidade, não um valor em reais. Se Em consultas e Consultas novas já tiverem valor,
+            mudar a quantidade recalcula Em consultas sozinho, mantendo o mesmo valor por consulta (edite Em consultas direto
+            para mudar esse valor por consulta). Arraste pela alça no canto de cada cartão para reordenar.
           </p>
         </section>
 

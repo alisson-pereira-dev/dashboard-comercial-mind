@@ -13,8 +13,6 @@ export const METRIC_HELP: Record<MetricKey, string> = {
     'Oportunidades do pipeline Qualificação (IA) marcadas como ganhas dentro do período, pela data em que foram marcadas como ganhas no GHL.',
   consultas_novas:
     'Oportunidades do pipeline Qualificação (IA) criadas no período que estão nas etapas Consulta Agendada e Pós consulta.',
-  tratamentos_novos:
-    'Oportunidades marcadas como ganhas no período que estão nas etapas de consulta (Consulta Agendada ou Pós consulta): consulta feita e convertida em tratamento.',
   faturamento_consultas:
     'Cada agendamento criado no calendário do GHL vale R$ 160, e quando é marcado como comparecido passa a valer R$ 320 (no lugar dos 160, não somando). Independente do cartão Consultas agendadas, que conta pela etapa do pipeline. Clique no cartão para ver quais linhas formam o valor.',
   faturamento_tratamentos:
@@ -23,6 +21,8 @@ export const METRIC_HELP: Record<MetricKey, string> = {
 }
 
 export const EXTRA_HELP = {
+  tratamentosNovos:
+    'Oportunidades marcadas como ganhas no período que estão nas etapas de consulta (Consulta Agendada ou Pós consulta): consulta feita e convertida em tratamento.',
   fechamentosConsulta:
     'Oportunidades do pipeline Qualificação (IA) marcadas como ganhas no período que estão na etapa Consulta Agendada.',
   fechamentosFollowup:

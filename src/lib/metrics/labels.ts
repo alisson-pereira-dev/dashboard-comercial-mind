@@ -7,7 +7,6 @@ export const METRIC_LABELS: Record<MetricKey, string> = {
   comparecimentos: 'Comparecimentos',
   vendas: 'Vendas',
   consultas_novas: 'Consultas novas',
-  tratamentos_novos: 'Tratamentos novos',
   faturamento_consultas: 'Faturamento em consultas',
   faturamento_tratamentos: 'Faturamento em tratamentos',
   faturamento_total: 'Faturamento total',

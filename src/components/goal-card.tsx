@@ -103,8 +103,8 @@ export function GoalCard({
   )
 }
 
-// Número sem meta (fechamentos em consulta e em follow up). Usado lado a lado com os GoalCard
-// compactos, então o cabeçalho tem a mesma altura mínima (duas linhas).
+// Número sem meta (tratamentos novos, fechamentos em consulta e em follow up). Usado lado a lado com os
+// GoalCard compactos, então o cabeçalho tem a mesma altura mínima (duas linhas).
 export function CountCard({
   icon,
   label,
