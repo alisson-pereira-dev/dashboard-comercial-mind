@@ -340,7 +340,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
 <!-- ============ 2 ============ -->
 <section class="chapter" id="c2">
   <div class="ch-head"><div class="num">2</div><div><span class="part">Parte 1 · Entender</span><h2>Anatomia da tela</h2></div></div>
-  <div class="resumo"><b>Em resumo</b><p>A tela tem 6 áreas. Cada uma tem um período (mês ou intervalo de datas) e responde a uma pergunta de negócio. Este capítulo é o mapa: use-o para saber a que capítulo ir quando tiver dúvida sobre uma área.</p></div>
+  <div class="resumo"><b>Em resumo</b><p>A tela tem 6 áreas, todas no mesmo período (mês ou intervalo de datas), e cada uma responde a uma pergunta de negócio. Este capítulo é o mapa: use-o para saber a que capítulo ir quando tiver dúvida sobre uma área.</p></div>
 
   <div class="screen" aria-label="Esquema da tela do dashboard">
     <div class="sc"><div class="row"><div><b style="font-size:15px">Dashboard comercial</b><div style="font-size:11px;color:var(--muted)">Dados atualizados em 16/10/2026, 16:57</div></div><span class="btn">Atualizar dados</span></div><span class="mk">1</span></div>
@@ -352,7 +352,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
         <div class="fcol"><small style="font-weight:700">REALIZADO</small><div class="fs d" style="width:100%">Leads 103</div><div class="fs" style="width:86%">Qualificados 3</div><div class="fs" style="width:72%">Agendadas 0</div><div class="fs" style="width:58%">Comparec. 0</div><div class="fs" style="width:46%">Vendas 1</div></div>
         <div class="fcol"><small style="font-weight:700">IDEAL / METAS</small><div class="fs" style="width:100%">Leads 150</div><div class="fs" style="width:86%">Qualificados 150</div><div class="fs" style="width:72%">Agendadas 150</div><div class="fs" style="width:58%">Comparec. 150</div><div class="fs" style="width:46%">Vendas 150</div></div>
       </div><span class="mk">5</span></div>
-    <div class="sc"><div class="row"><h5>Taxas de cada etapa do funil</h5><span class="filt">Outubro de 2026 ▾</span></div><div class="row"><div class="mini">Qualificação<b>2,9%</b></div><div class="mini">Agendamento<b>0%</b></div><div class="mini">Comparecimento<b>-</b></div><div class="mini">Conversão<b>-</b></div></div><span class="mk">6</span></div>
+    <div class="sc"><h5>Taxas de cada etapa do funil</h5><div class="row"><div class="mini">Qualificação<b>2,9%</b></div><div class="mini">Agendamento<b>0%</b></div><div class="mini">Comparecimento<b>-</b></div><div class="mini">Conversão<b>-</b></div></div><span class="mk">6</span></div>
   </div>
   <p style="font-size:13px;color:var(--muted)">Esquema ilustrativo. Os valores são os de 16/10/2026 e servem só como exemplo. A ordem das áreas 4, 5 e 6 é a de 27/10/2026.</p>
 
@@ -361,17 +361,17 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
     <thead><tr><th>#</th><th>Área</th><th>Pergunta que responde</th><th>Período controlado por</th><th>Capítulos</th></tr></thead>
     <tbody>
       <tr><td><b>1</b></td><td>Cabeçalho da tela: título, data da última atualização e o botão <b>Atualizar dados</b></td><td>Os dados estão atualizados? Quando foi a última vez?</td><td>Não se aplica</td><td><a href="#c6">6</a></td></tr>
-      <tr><td><b>2</b></td><td>Filtro de <b>vendedor</b> e filtro de <b>período do topo</b></td><td>De quem são os números? De que período?</td><td>O período do topo vale para as áreas 3 e 5. O vendedor vale para todas.</td><td><a href="#c12">12</a>, <a href="#c13">13</a></td></tr>
+      <tr><td><b>2</b></td><td>Filtro de <b>vendedor</b> e filtro de <b>período</b></td><td>De quem são os números? De que período?</td><td>O período vale para todas as áreas (3, 4, 5 e 6). O vendedor também.</td><td><a href="#c12">12</a>, <a href="#c13">13</a></td></tr>
       <tr><td><b>3</b></td><td>Faturamento</td><td>Quanto foi faturado em consultas, em tratamentos e no total, e como isso se compara à meta?</td><td>Período do topo</td><td><a href="#c8">8</a>, <a href="#c10">10</a>, <a href="#c11">11</a></td></tr>
-      <tr><td><b>4</b></td><td>Números de vendas</td><td>Quantas vendas, quantas de consulta, quantas de tratamento e em que etapa fecharam?</td><td>Mesmo filtro da área 6 (o seletor fica no título da área 6, mas vale para a 4 também)</td><td><a href="#c8">8</a>, <a href="#c11">11</a></td></tr>
+      <tr><td><b>4</b></td><td>Números de vendas</td><td>Quantas vendas, quantas de consulta, quantas de tratamento e em que etapa fecharam?</td><td>Período do topo</td><td><a href="#c8">8</a>, <a href="#c11">11</a></td></tr>
       <tr><td><b>5</b></td><td>Realizado vs. metas (funis)</td><td>Em cada etapa do funil, quanto foi feito e quanto era a meta? Qual seria a taxa ideal entre as etapas?</td><td>Período do topo</td><td><a href="#c8">8</a>, <a href="#c9">9</a>, <a href="#c10">10</a>, <a href="#c11">11</a></td></tr>
-      <tr><td><b>6</b></td><td>Taxas de cada etapa do funil</td><td>Que parte dos leads avança de uma etapa à outra?</td><td>Filtro próprio da seção (ao lado do título)</td><td><a href="#c9">9</a>, <a href="#c11">11</a></td></tr>
+      <tr><td><b>6</b></td><td>Taxas de cada etapa do funil</td><td>Que parte dos leads avança de uma etapa à outra?</td><td>Período do topo</td><td><a href="#c9">9</a>, <a href="#c11">11</a></td></tr>
     </tbody>
   </table></div>
 
   <div class="callout info"><span class="ic">i</span><div><p><b>Quer ver de onde vem cada número e qual conta é feita?</b> O capítulo <a href="#c11">11, "Do dado à tela"</a>, mostra a trilha completa de cada número: o campo no GHL, a regra de tradução, a coluna no banco, o cálculo exato e o que aparece na tela.</p></div></div>
 
-  <div class="callout warn"><span class="ic">!</span><div><p><b>Atenção: a tela tem dois períodos independentes.</b> O filtro do topo controla Faturamento e Realizado vs. metas. O filtro da seção Taxas controla Números de vendas e Taxas, mesmo a área Números de vendas aparecendo mais acima na tela (desde 27/10/2026). Isso é proposital, mas é fácil de esquecer: sempre confira o período escrito no subtítulo de cada área antes de comparar números entre áreas.</p></div></div>
+  <div class="callout info"><span class="ic">i</span><div><p><b>Um único filtro de período para toda a tela (desde 28/10/2026).</b> Antes havia dois filtros independentes (um para Faturamento e Realizado vs. metas, outro para Taxas e Números de vendas), e era fácil esquecer de trocar os dois. Agora o filtro do topo, ao lado do filtro de vendedor, vale para todas as áreas.</p></div></div>
 
   <h3>Navegação: o menu lateral</h3>
   <p>À esquerda da tela fica o <b>menu lateral</b>, que tem três partes:</p>
@@ -853,7 +853,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
     <li><b>Denominador zero:</b> a taxa é "sem base para cálculo", mostrada como <b>"-"</b>. Zero por cento só aparece quando há base e o resultado é realmente zero.</li>
     <li><b>As duas conversões não dependem mais do comparecimento:</b> mesmo com Comparecimentos zerado (a equipe ainda não marca "compareceu" no calendário, capítulo 14), as taxas de conversão na consulta e pós consulta mostram um percentual real, porque a base de cada uma é a própria etapa (Consultas agendadas e Pós consulta), não os comparecimentos.</li>
     <li><b>Pode passar de 100%:</b> como cada número usa uma data de referência diferente, é possível, em casos raros, que uma taxa passe de 100%. Isso não é um erro de conta.</li>
-    <li><b>Período e vendedor:</b> as taxas respeitam o vendedor selecionado e o período do filtro da seção Taxas.</li>
+    <li><b>Período e vendedor:</b> as taxas respeitam o vendedor selecionado e o período do filtro do topo (o único filtro da tela, desde 28/10/2026).</li>
   </ul>
 
   <h3>As taxas "ideais" do funil de metas</h3>
@@ -1162,7 +1162,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
 <!-- ============ 12 ============ -->
 <section class="chapter" id="c12">
   <div class="ch-head"><div class="num">12</div><div><span class="part">Parte 4 · Os números</span><h2>Períodos e fuso horário</h2></div></div>
-  <div class="resumo"><b>Em resumo</b><p>Tudo é contado no horário de Brasília. O padrão é o mês atual. A tela tem dois filtros de período independentes, e o link da página guarda as escolhas.</p></div>
+  <div class="resumo"><b>Em resumo</b><p>Tudo é contado no horário de Brasília. O padrão é o mês atual. Um único filtro de período controla a tela inteira, e o link da página guarda a escolha.</p></div>
 
   <h3>Fuso horário</h3>
   <p>O fuso é fixo: <b>Brasília (UTC-3)</b>. Um período começa à <b>00:00 do primeiro dia</b> e termina à <b>00:00 do dia seguinte ao último dia</b> (o fim é exclusivo). Assim, uma oportunidade criada às 23:30 do dia 31 entra no mês certo, mesmo que em UTC já seja o dia seguinte.</p>
@@ -1180,20 +1180,12 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
   </table></div>
   <p>Se você escolher um intervalo que, na prática, é um mês completo (do dia 1 ao último dia), a plataforma o trata como aquele mês.</p>
 
-  <h3>Os dois filtros independentes</h3>
-  <div class="tw"><table>
-    <thead><tr><th>Filtro</th><th>Onde fica</th><th>O que controla</th></tr></thead>
-    <tbody>
-      <tr><td><b>Período do topo</b></td><td>Canto direito, ao lado do filtro de vendedor</td><td>Faturamento e Realizado vs. metas (funis)</td></tr>
-      <tr><td><b>Período das taxas</b></td><td>Ao lado do título "Taxas de cada etapa do funil"</td><td>Taxas e Números de vendas</td></tr>
-    </tbody>
-  </table></div>
-  <p>Cada um guarda a sua escolha no endereço da página, em parâmetros próprios. Trocar um não altera o outro, e o filtro de vendedor é mantido nos dois.</p>
+  <h3>Um único filtro para todos os blocos</h3>
+  <p>Até 28/10/2026 o dashboard tinha dois filtros de período independentes (um para Faturamento e Realizado vs. metas, outro para Taxas e Números de vendas), o que obrigava a trocar o período duas vezes para olhar o mesmo intervalo em toda a tela. Agora há um único filtro, no canto direito ao lado do filtro de vendedor, e todos os blocos (Faturamento, Números de vendas, Realizado vs. metas e Taxas de cada etapa do funil) usam o mesmo período.</p>
   <div class="tw"><table>
     <thead><tr><th>Parâmetro no link</th><th>Significado</th></tr></thead>
     <tbody>
-      <tr><td><code>meta_mes</code> ou <code>meta_de</code> e <code>meta_ate</code></td><td>Período do topo (mês, ou intervalo)</td></tr>
-      <tr><td><code>vendas_mes</code> ou <code>vendas_de</code> e <code>vendas_ate</code></td><td>Período das taxas e dos números de vendas</td></tr>
+      <tr><td><code>periodo_mes</code> ou <code>periodo_de</code> e <code>periodo_ate</code></td><td>Período (mês, ou intervalo) usado por todos os blocos</td></tr>
       <tr><td><code>vendedor</code></td><td>Vendedor selecionado (ausente = clínica toda)</td></tr>
     </tbody>
   </table></div>
@@ -1333,7 +1325,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
   <h3>Nível 1: entenda o número na própria tela</h3>
   <ol class="steps">
     <li><b>Passe o mouse no "!"</b>A frase explica a regra de contagem.</li>
-    <li><b>Confira o período e o vendedor</b>Leia o subtítulo da área ("Resultado financeiro de Outubro de 2026", "Resultados registrados em..."). Lembre que a tela tem dois filtros de período.</li>
+    <li><b>Confira o período e o vendedor</b>Leia o subtítulo da área ("Resultado financeiro de Outubro de 2026", "Resultados registrados em..."). Um único filtro de período (no topo) vale para a tela inteira.</li>
     <li><b>Atualize os dados</b>Clique em Atualizar dados e veja se a data de atualização mudou. Se o número foi alterado no GHL depois da última atualização, a tela ainda mostra o valor antigo.</li>
     <li><b>Procure um aviso amarelo</b>Ele diz se algum campo do GHL está faltando.</li>
   </ol>
@@ -1568,6 +1560,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 36px;color:var(--muted);font-siz
       <tr><td>19/10/2026</td><td>O painel de Metas virou um popup, em vez de uma página separada.</td><td>Menos trocas de página; o dashboard continua visível por trás.</td></tr>
       <tr><td>20/10/2026</td><td>As metas passaram a ter o formato do dashboard (cartões de faturamento e funil editável) e o cálculo do total do faturamento pela soma.</td><td>Evitar digitar metas que decorrem das taxas e manter o funil coerente.</td></tr>
       <tr><td>20/10/2026</td><td>A troca de tela ficou mais rápida: o login passou a ser conferido localmente em cada navegação (sem ida ao servidor de autenticação), a página de Metas busca vendedores e metas ao mesmo tempo, e as telas mostram um esqueleto de carregamento imediato.</td><td>As trocas de tela estavam lentas.</td></tr>
+      <tr><td>28/10/2026</td><td>A tela passou a ter um único filtro de período, em vez de dois independentes (um para Faturamento e Realizado vs. metas, outro para Taxas e Números de vendas). O filtro do topo, ao lado do filtro de vendedor, agora vale para a tela inteira; o filtro que ficava ao lado do título "Taxas de cada etapa do funil" foi removido. Os parâmetros da URL <code>meta_mes</code>/<code>meta_de</code>/<code>meta_ate</code> e <code>vendas_mes</code>/<code>vendas_de</code>/<code>vendas_ate</code> viraram um só, <code>periodo_mes</code>/<code>periodo_de</code>/<code>periodo_ate</code> (link antigo com os parâmetros velhos simplesmente cai no período padrão, mês atual).</td><td>Pedido do cliente: evitar ter que trocar o período em dois lugares para olhar o mesmo intervalo na tela inteira.</td></tr>
       <tr><td>28/10/2026</td><td>A sincronização passou a apagar agendamentos excluídos no GHL. Até aqui, o upsert só gravava e atualizava: um agendamento apagado no calendário do GHL continuava para sempre na cópia do painel, entrando nas contagens e nas listas de detalhe. Agora, depois de reler a janela toda de agendamentos (730 dias no passado até 90 no futuro), a sincronização apaga do banco quem estava nessa janela mas não veio mais na resposta do GHL (campo novo <code>agendamentosExcluidos</code> no resultado da sincronização). Conferido direto no GHL, só de leitura, que o endpoint de eventos do calendário não pagina (a location piloto tem só 33 eventos na janela toda), para garantir que a limpeza não apagaria agendamentos reais por estarem numa página seguinte não lida.</td><td>Cliente apagou um agendamento de teste ("alisson mindsight") no GHL e ele continuava aparecendo na lista "Ver as consultas" do painel.</td></tr>
       <tr><td>28/10/2026</td><td><b>Correção do dia seguinte:</b> o acompanhamento de Em consultas por Consultas novas (linha abaixo) não funcionava quando Consultas novas ainda estava em branco (o caso mais comum: a pessoa digita Em consultas primeiro) e, pior, dobrava o valor quando Consultas novas era apagado para digitar de novo. A causa: o valor por consulta era recalculado a cada edição a partir de Em consultas ÷ Consultas novas atuais, mas depois da primeira multiplicação Em consultas vira um total, não mais o valor de uma consulta; dividir esse total por uma quantidade em branco (ou por uma quantidade antiga perdida) devolvia um valor por consulta errado. Agora o valor por consulta é guardado à parte no formulário (<code>Estado.precoConsulta</code>, em <code>src/lib/metas-edit.ts</code>) e só é redefinido quando a pessoa edita Em consultas direto; mudar Consultas novas nunca o recalcula, só o usa, então ele sobrevive mesmo se o campo for apagado e digitado de novo.</td><td>Cliente reportou (com print) que o campo não respondia na hora e os números ficavam confusos ao trocar a quantidade.</td></tr>
       <tr><td>27/10/2026</td><td>Na página de Metas, o campo <b>Em consultas</b> passou a acompanhar <b>Consultas novas</b>: mudar a quantidade recalcula o faturamento sozinho, multiplicando pelo valor por consulta (Em consultas ÷ Consultas novas, ou o próprio Em consultas se a quantidade ainda estiver em branco). Lógica em <code>src/lib/metas-edit.ts</code> (função <code>editar</code>).</td><td>Pedido do cliente: evitar o retrabalho de ajustar os dois campos na mão para manter o mesmo valor por consulta.</td></tr>

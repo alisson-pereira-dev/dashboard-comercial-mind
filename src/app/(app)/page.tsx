@@ -44,8 +44,7 @@ import { SortableCards } from '@/components/sortable-cards'
 import { PeriodFilter } from '@/components/period-filter'
 import { VendedorTabs } from '@/components/vendedor-tabs'
 
-// Dois períodos independentes na URL:
-// meta_* para Faturamento e Realizado vs. metas, vendas_* para Taxas e Números de vendas.
+// Um único período na URL (periodo_mes / periodo_de / periodo_ate), usado por todos os blocos.
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
@@ -127,42 +126,25 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
   // O período padrão depende da data de hoje, então a página só renderiza no pedido.
   await connection()
   const params = await searchParams
-  const periodMeta = parsePeriod({
-    mes: one(params.meta_mes),
-    de: one(params.meta_de),
-    ate: one(params.meta_ate),
-  })
-  const periodVendas = parsePeriod({
-    mes: one(params.vendas_mes),
-    de: one(params.vendas_de),
-    ate: one(params.vendas_ate),
+  const period = parsePeriod({
+    mes: one(params.periodo_mes),
+    de: one(params.periodo_de),
+    ate: one(params.periodo_ate),
   })
   const hoje = todayBR()
 
   const supabase = await createClient()
-  let dataMeta, dataVendas, vendedores, vendedorId: string | null
+  let data, vendedores, vendedorId: string | null
   try {
-    const mesmoPeriodo =
-      periodMeta.fromIso === periodVendas.fromIso && periodMeta.toIso === periodVendas.toIso
     const pedido = one(params.vendedor) ?? null
-    // Tudo em paralelo, já usando o vendedor pedido. Se o id não for de um vendedor conhecido,
-    // os números são refeitos sem filtro logo abaixo.
-    const carregar = (v: string | null) =>
-      Promise.all([
-        getDashboardData(supabase, periodMeta, v),
-        mesmoPeriodo ? null : getDashboardData(supabase, periodVendas, v),
-      ])
-    const [lista, [meta, vendas]] = await Promise.all([getVendedores(supabase), carregar(pedido)])
+    const [lista, meta] = await Promise.all([
+      getVendedores(supabase),
+      getDashboardData(supabase, period, pedido),
+    ])
     vendedores = lista
     vendedorId = lista.find((v) => v.id === pedido)?.id ?? null
-    if (pedido && !vendedorId) {
-      const [metaSemFiltro, vendasSemFiltro] = await carregar(null)
-      dataMeta = metaSemFiltro
-      dataVendas = vendasSemFiltro ?? metaSemFiltro
-    } else {
-      dataMeta = meta
-      dataVendas = vendas ?? meta
-    }
+    // Se o id pedido não for de um vendedor conhecido, refaz sem filtro.
+    data = pedido && !vendedorId ? await getDashboardData(supabase, period, null) : meta
   } catch (e) {
     return (
       <main className="w-full space-y-5 px-4 py-6 lg:px-1 lg:py-1">
@@ -176,7 +158,7 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
     )
   }
 
-  const { ultimoSync, ultimoSyncOk, temDados } = dataMeta
+  const { ultimoSync, ultimoSyncOk, temDados } = data
   const vendedorNome = vendedores.find((v) => v.id === vendedorId)?.nome ?? null
   const padraoNome = vendedores.find((v) => v.id === VENDEDOR_PADRAO_ID)?.nome ?? null
   const tabs = [
@@ -184,8 +166,7 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
     ...vendedores.map((v) => ({ id: v.id, label: v.nome, href: hrefWith('/', params, 'vendedor', v.id) })),
   ]
 
-  // Bloco A (período meta_*): faturamento e funis
-  const a = dataMeta.realizado
+  const a = data.realizado
   // Quando o faturamento está zerado por falta de dado no GHL, a tela diz o motivo.
   const avisosFaturamento: string[] = []
   if (temDados && a.faturamento_consultas === 0) {
@@ -198,8 +179,8 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
       'Faturamento em tratamentos soma o valor das oportunidades marcadas como ganhas. Nenhuma oportunidade foi marcada como ganha neste período.',
     )
   }
-  const metasA = dataMeta.metas
-  const ratesA = funnelRates({
+  const metas = data.metas
+  const rates = funnelRates({
     leads: a.leads,
     leadsQualificados: a.leads_qualificados,
     consultasAgendadas: a.consultas_agendadas,
@@ -209,21 +190,7 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
     fechamentosFollowup: a.fechamentosFollowup,
     posConsultaN: a.posConsultaN,
   })
-  const idealRates = funnelRatesFromGoals(metasA)
-
-  // Bloco B (período vendas_*): taxas e números de vendas
-  const b = dataVendas.realizado
-  const metasB = dataVendas.metas
-  const ratesB = funnelRates({
-    leads: b.leads,
-    leadsQualificados: b.leads_qualificados,
-    consultasAgendadas: b.consultas_agendadas,
-    comparecimentos: b.comparecimentos,
-    vendas: b.vendas,
-    fechamentosConsulta: b.fechamentosConsulta,
-    fechamentosFollowup: b.fechamentosFollowup,
-    posConsultaN: b.posConsultaN,
-  })
+  const idealRates = funnelRatesFromGoals(metas)
 
   return (
     <main className="w-full space-y-5 px-4 py-6 lg:px-1 lg:py-1">
@@ -248,10 +215,10 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
           }
         />
         <PeriodFilter
-          prefix="meta_"
-          kind={periodMeta.kind}
-          de={periodMeta.de}
-          ate={periodMeta.ate}
+          prefix="periodo_"
+          kind={period.kind}
+          de={period.de}
+          ate={period.ate}
           hoje={hoje}
         />
       </div>
@@ -264,13 +231,13 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
       {!temDados ? (
         <Notice>Ainda não há dados. Clique em Atualizar dados para buscar as informações do GHL.</Notice>
       ) : null}
-      {vendedorNome ? <AtribuicaoNota data={dataMeta} period={periodMeta} nome={vendedorNome} /> : null}
+      {vendedorNome ? <AtribuicaoNota data={data} period={period} nome={vendedorNome} /> : null}
 
       <section className="card p-5 sm:p-6" aria-labelledby="faturamento-titulo">
         <SectionHeader
           id="faturamento-titulo"
           title="Faturamento"
-          subtitle={`Resultado financeiro de ${periodLabel(periodMeta)}${vendedorNome ? ` (${vendedorNome})` : ''}.`}
+          subtitle={`Resultado financeiro de ${periodLabel(period)}${vendedorNome ? ` (${vendedorNome})` : ''}.`}
         />
         <div className="mt-4">
           <SortableCards
@@ -283,17 +250,17 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                 label: 'Em consultas',
                 node: (
                   <ConsultasDetalhe
-                    inicio={periodMeta.fromIso}
-                    fim={periodMeta.toIso}
+                    inicio={period.fromIso}
+                    fim={period.toIso}
                     vendedorId={vendedorId}
-                    periodo={periodLabel(periodMeta)}
+                    periodo={periodLabel(period)}
                   >
                     <GoalCard
                       icon={CalendarDays}
                       label="Em consultas"
                       info={METRIC_HELP.faturamento_consultas}
                       realizado={a.faturamento_consultas}
-                      meta={metasA.faturamento_consultas}
+                      meta={metas.faturamento_consultas}
                       money
                       rodape={
                         <button
@@ -313,17 +280,17 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                 label: 'Em tratamentos',
                 node: (
                   <TratamentosDetalhe
-                    inicio={periodMeta.fromIso}
-                    fim={periodMeta.toIso}
+                    inicio={period.fromIso}
+                    fim={period.toIso}
                     vendedorId={vendedorId}
-                    periodo={periodLabel(periodMeta)}
+                    periodo={periodLabel(period)}
                   >
                     <GoalCard
                       icon={FileText}
                       label="Em tratamentos"
                       info={METRIC_HELP.faturamento_tratamentos}
                       realizado={a.faturamento_tratamentos}
-                      meta={metasA.faturamento_tratamentos}
+                      meta={metas.faturamento_tratamentos}
                       money
                       rodape={
                         <button
@@ -347,7 +314,7 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                     label="Total"
                     info={METRIC_HELP.faturamento_total}
                     realizado={a.faturamento_total}
-                    meta={metasA.faturamento_total}
+                    meta={metas.faturamento_total}
                     money
                     highlight
                   />
@@ -369,9 +336,8 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
         <SectionHeader
           id="numeros-titulo"
           title="Números de vendas"
-          subtitle={`Resultados registrados em ${periodLabel(periodVendas)}${vendedorNome ? ` (${vendedorNome})` : ''}.`}
+          subtitle={`Resultados registrados em ${periodLabel(period)}${vendedorNome ? ` (${vendedorNome})` : ''}.`}
         />
-        {vendedorNome ? <AtribuicaoNota data={dataVendas} period={periodVendas} nome={vendedorNome} /> : null}
         <SortableCards
           storageKey="dashboard:ordem:numeros"
           dndId="numeros"
@@ -387,8 +353,8 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                   icon={BarChart3}
                   label="Vendas"
                   info={METRIC_HELP.vendas}
-                  realizado={b.vendas}
-                  meta={metasB.vendas}
+                  realizado={a.vendas}
+                  meta={metas.vendas}
                 />
               ),
             },
@@ -402,8 +368,8 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                   icon={CalendarDays}
                   label="Consultas novas"
                   info={METRIC_HELP.consultas_novas}
-                  realizado={b.consultas_novas}
-                  meta={metasB.consultas_novas}
+                  realizado={a.consultas_novas}
+                  meta={metas.consultas_novas}
                 />
               ),
             },
@@ -415,7 +381,7 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                   icon={FilePlus2}
                   label="Tratamentos novos"
                   info={EXTRA_HELP.tratamentosNovos}
-                  value={b.tratamentosNovos}
+                  value={a.tratamentosNovos}
                 />
               ),
             },
@@ -426,16 +392,16 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                 <FechamentosDetalhe
                   etapa="consulta"
                   etapaId={ETAPA_CONSULTA_AGENDADA_ID}
-                  inicio={periodVendas.fromIso}
-                  fim={periodVendas.toIso}
+                  inicio={period.fromIso}
+                  fim={period.toIso}
                   vendedorId={vendedorId}
-                  periodo={periodLabel(periodVendas)}
+                  periodo={periodLabel(period)}
                 >
                   <CountCard
                     icon={CalendarCheck}
                     label="Fechamentos em consulta"
                     info={EXTRA_HELP.fechamentosConsulta}
-                    value={b.fechamentosConsulta}
+                    value={a.fechamentosConsulta}
                     rodape={
                       <button
                         type="button"
@@ -456,16 +422,16 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                 <FechamentosDetalhe
                   etapa="followup"
                   etapaId={ETAPA_POS_CONSULTA_ID}
-                  inicio={periodVendas.fromIso}
-                  fim={periodVendas.toIso}
+                  inicio={period.fromIso}
+                  fim={period.toIso}
                   vendedorId={vendedorId}
-                  periodo={periodLabel(periodVendas)}
+                  periodo={periodLabel(period)}
                 >
                   <CountCard
                     icon={MessageCircleReply}
                     label="Fechamentos em follow up"
                     info={EXTRA_HELP.fechamentosFollowup}
-                    value={b.fechamentosFollowup}
+                    value={a.fechamentosFollowup}
                     rodape={
                       <button
                         type="button"
@@ -487,7 +453,7 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
         <SectionHeader
           id="realizado-titulo"
           title="Realizado vs. metas"
-          subtitle={`Compare cada etapa do realizado com a meta de ${periodLabel(periodMeta)}.`}
+          subtitle={`Compare cada etapa do realizado com a meta de ${periodLabel(period)}.`}
         />
         {temDados && a.consultas_agendadas > 0 && a.comparecimentos === 0 ? (
           <div className="mt-4">
@@ -499,32 +465,32 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
         ) : null}
         <div className="mt-6">
           <GoalFunnels
-            rates={ratesA}
+            rates={rates}
             idealRates={idealRates}
             stages={[
-              { key: 'leads', label: 'Leads', help: METRIC_HELP.leads, value: a.leads, meta: metasA.leads },
+              { key: 'leads', label: 'Leads', help: METRIC_HELP.leads, value: a.leads, meta: metas.leads },
               {
                 key: 'leads_qualificados',
                 label: 'Leads qualificados',
                 help: METRIC_HELP.leads_qualificados,
                 value: a.leads_qualificados,
-                meta: metasA.leads_qualificados,
+                meta: metas.leads_qualificados,
               },
               {
                 key: 'consultas_agendadas',
                 label: 'Consultas agendadas',
                 help: METRIC_HELP.consultas_agendadas,
                 value: a.consultas_agendadas,
-                meta: metasA.consultas_agendadas,
+                meta: metas.consultas_agendadas,
               },
               {
                 key: 'comparecimentos',
                 label: 'Comparecimentos',
                 help: METRIC_HELP.comparecimentos,
                 value: a.comparecimentos,
-                meta: metasA.comparecimentos,
+                meta: metas.comparecimentos,
               },
-              { key: 'vendas', label: 'Vendas', help: METRIC_HELP.vendas, value: a.vendas, meta: metasA.vendas },
+              { key: 'vendas', label: 'Vendas', help: METRIC_HELP.vendas, value: a.vendas, meta: metas.vendas },
             ]}
           />
         </div>
@@ -539,15 +505,6 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
           id="taxas-titulo"
           title="Taxas de cada etapa do funil"
           subtitle="Entenda como os leads avançam até a venda."
-          filter={
-            <PeriodFilter
-              prefix="vendas_"
-              kind={periodVendas.kind}
-              de={periodVendas.de}
-              ate={periodVendas.ate}
-              hoje={hoje}
-            />
-          }
         />
         {/* Faixa que rola na horizontal (arraste com o mouse ou toque); a alça de cada cartão reordena */}
         <DragScrollRow className="pb-2">
@@ -566,10 +523,10 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                       icon={Filter}
                       label="Taxa de qualificação"
                       help={EXTRA_HELP.qualificacao}
-                      value={ratesB.qualificacao}
+                      value={rates.qualificacao}
                       from="Leads"
                       to="Leads qualificados"
-                      caption={`${plural(b.leads_qualificados, 'qualificado', 'qualificados')} / ${plural(b.leads, 'lead', 'leads')}`}
+                      caption={`${plural(a.leads_qualificados, 'qualificado', 'qualificados')} / ${plural(a.leads, 'lead', 'leads')}`}
                     />
                   </div>
                 ),
@@ -583,10 +540,10 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                       icon={CalendarDays}
                       label="Taxa de agendamento de MQL"
                       help={EXTRA_HELP.agendamento}
-                      value={ratesB.agendamento}
+                      value={rates.agendamento}
                       from="Leads qualificados"
                       to="Consultas agendadas"
-                      caption={`${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')} / ${plural(b.leads_qualificados, 'qualificado', 'qualificados')}`}
+                      caption={`${plural(a.consultas_agendadas, 'agendamento', 'agendamentos')} / ${plural(a.leads_qualificados, 'qualificado', 'qualificados')}`}
                     />
                   </div>
                 ),
@@ -600,10 +557,10 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                       icon={CalendarPlus}
                       label="Taxa de agendamento de leads"
                       help={EXTRA_HELP.agendamentoLead}
-                      value={ratesB.agendamentoLead}
+                      value={rates.agendamentoLead}
                       from="Leads"
                       to="Consultas agendadas"
-                      caption={`${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')} / ${plural(b.leads, 'lead', 'leads')}`}
+                      caption={`${plural(a.consultas_agendadas, 'agendamento', 'agendamentos')} / ${plural(a.leads, 'lead', 'leads')}`}
                     />
                   </div>
                 ),
@@ -617,10 +574,10 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                       icon={Users}
                       label="Taxa de comparecimento"
                       help={EXTRA_HELP.comparecimento}
-                      value={ratesB.comparecimento}
+                      value={rates.comparecimento}
                       from="Consultas agendadas"
                       to="Comparecimentos"
-                      caption={`${plural(b.comparecimentos, 'comparecimento', 'comparecimentos')} / ${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')}`}
+                      caption={`${plural(a.comparecimentos, 'comparecimento', 'comparecimentos')} / ${plural(a.consultas_agendadas, 'agendamento', 'agendamentos')}`}
                     />
                   </div>
                 ),
@@ -633,19 +590,19 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                     <FechamentosDetalhe
                       etapa="consulta"
                       etapaId={ETAPA_CONSULTA_AGENDADA_ID}
-                      inicio={periodVendas.fromIso}
-                      fim={periodVendas.toIso}
+                      inicio={period.fromIso}
+                      fim={period.toIso}
                       vendedorId={vendedorId}
-                      periodo={periodLabel(periodVendas)}
+                      periodo={periodLabel(period)}
                     >
                       <RateCard
                         icon={FilePlus2}
                         label="Taxa de conversão na consulta"
                         help={EXTRA_HELP.conversaoConsulta}
-                        value={ratesB.conversaoConsulta}
+                        value={rates.conversaoConsulta}
                         from="Consultas agendadas"
                         to="Fechamentos em consulta"
-                        caption={`${plural(b.fechamentosConsulta, 'fechamento', 'fechamentos')} / ${plural(b.consultas_agendadas, 'agendamento', 'agendamentos')}`}
+                        caption={`${plural(a.fechamentosConsulta, 'fechamento', 'fechamentos')} / ${plural(a.consultas_agendadas, 'agendamento', 'agendamentos')}`}
                         rodape={
                           <button
                             type="button"
@@ -668,19 +625,19 @@ async function DashboardContent({ searchParams }: { searchParams: SearchParams }
                     <FechamentosDetalhe
                       etapa="followup"
                       etapaId={ETAPA_POS_CONSULTA_ID}
-                      inicio={periodVendas.fromIso}
-                      fim={periodVendas.toIso}
+                      inicio={period.fromIso}
+                      fim={period.toIso}
                       vendedorId={vendedorId}
-                      periodo={periodLabel(periodVendas)}
+                      periodo={periodLabel(period)}
                     >
                       <RateCard
                         icon={MessageCircleReply}
                         label="Taxa de conversão pós consulta"
                         help={EXTRA_HELP.conversaoPosConsulta}
-                        value={ratesB.conversaoPosConsulta}
+                        value={rates.conversaoPosConsulta}
                         from="Pós consulta"
                         to="Fechamentos em follow up"
-                        caption={`${plural(b.fechamentosFollowup, 'fechamento', 'fechamentos')} / ${plural(b.posConsultaN, 'oportunidade', 'oportunidades')}`}
+                        caption={`${plural(a.fechamentosFollowup, 'fechamento', 'fechamentos')} / ${plural(a.posConsultaN, 'oportunidade', 'oportunidades')}`}
                         rodape={
                           <button
                             type="button"

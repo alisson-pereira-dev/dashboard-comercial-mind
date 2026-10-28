@@ -34,7 +34,7 @@ function detectPreset(de: string, ate: string, hoje: string): Preset {
 }
 
 type Props = {
-  /** Prefixo dos parâmetros da URL deste filtro, ex.: "meta_" gera meta_mes, meta_de, meta_ate. */
+  /** Prefixo dos parâmetros da URL deste filtro, ex.: "periodo_" gera periodo_mes, periodo_de, periodo_ate. */
   prefix: string
   kind: 'mes' | 'custom'
   de: string
